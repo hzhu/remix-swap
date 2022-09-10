@@ -1,0 +1,14 @@
+node_modules
+
+.cache
+.env
+.vercel
+.output
+
+/build/
+/public/build
+/api
+/cache
+
+/cypress/screenshots
+/cypress/videos
