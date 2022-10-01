@@ -113,7 +113,7 @@ export const loader = async ({ request }: LoaderArgs) => {
     lang,
     translations,
     ENV: {
-      ALCHEMY_ID: process.env.ALCHEMY_ID,
+      ALCHEMY_API_KEY: process.env.ALCHEMY_API_KEY,
       NODE_ENV: process.env.NODE_ENV,
     },
   };
@@ -405,7 +405,7 @@ const WithRainbowKit: FC = () => {
   const { lang, translations, ENV } = useLoaderData<typeof loader>();
   const { client, chains } = useSetupWagmi({
     appName: "remix-swap",
-    alchemyId: ENV.ALCHEMY_ID,
+    alchemyId: ENV.ALCHEMY_API_KEY,
     enablePublicTestnets: ENV.NODE_ENV === "development",
   });
 
