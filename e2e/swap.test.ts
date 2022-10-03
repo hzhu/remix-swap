@@ -1,22 +1,18 @@
 import { allChains } from "wagmi";
 import puppeteer from "puppeteer";
 import * as dappeteer from "@chainsafe/dappeteer";
-import { parseUnits } from "@ethersproject/units";
-import { Contract } from "@ethersproject/contracts";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { getDocument, queries } from "pptr-testing-library";
-import ERC20_ABI from "../app/abis/ERC20_ABI.json";
 import type { Browser, Page } from "puppeteer";
 import type { Dappeteer } from "@chainsafe/dappeteer";
 
 const [hardhat] = allChains.filter((chain) => chain.network === "hardhat");
 const { id: chainId, name: networkName, rpcUrls } = hardhat;
-const TEST_WALLET = "0xcba18C0e0BbcC57C70fdeC4451293a27Bd00f50e";
-const TEST_WALLET_PRIVATE_KEY =
+const TEST_ACCOUNT = "0xcba18C0e0BbcC57C70fdeC4451293a27Bd00f50e";
+const TEST_ACCOUNT_PRIVATE_KEY =
   "02d1336e3a503a98033fd76bfc7ccea616eb816a5cbac77d9ed46d71497f160c";
-const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-const WETH_WHALE = "0x4918fc71BD92F262c4D2F73804fa805de8602743";
-const ETH_WHALE = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+const WETH_CONTRACT_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+const HARDHAT_ACCOUNT = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
 const { getByText, findAllByText, getByLabelText } = queries;
 
@@ -27,33 +23,31 @@ let testPage: Page;
 async function fundTestAccount() {
   const PROVIDER = new JsonRpcProvider("http://127.0.0.1:8545/");
   await PROVIDER.send("hardhat_setNextBlockBaseFeePerGas", ["0x2540be400"]);
-  await PROVIDER.send("hardhat_impersonateAccount", [ETH_WHALE]);
+  
+  // Send 1000 ETH from Hardhat account to test account
   await PROVIDER.send("eth_sendTransaction", [
     {
-      from: ETH_WHALE,
-      to: TEST_WALLET,
+      from: HARDHAT_ACCOUNT,
+      to: TEST_ACCOUNT,
       gas: "0x76c0",
       gasPrice: "0x9184e72a000",
-      value: "0x21e16f6b7d6f5e618a",
+      value: "0x3635c9adc5dea00000", // 1000 ETH
     },
   ]);
 
-  const erc20 = new Contract(WETH_ADDRESS, ERC20_ABI, PROVIDER);
-  await PROVIDER.send("hardhat_impersonateAccount", [WETH_WHALE]);
+  // Impersonate test account
+  await PROVIDER.send("hardhat_impersonateAccount", [TEST_ACCOUNT]);
+
+  // Sends 100 ETH from test account to WETH smart contract
   await PROVIDER.send("eth_sendTransaction", [
     {
-      from: WETH_WHALE,
-      to: WETH_ADDRESS,
-      gas: "0xebf0",
+      from: TEST_ACCOUNT,
+      to: WETH_CONTRACT_ADDRESS,
+      gas: "0x186a0",
       gasPrice: "0x9184e72a000",
-      data: erc20.interface.encodeFunctionData("transfer", [
-        TEST_WALLET,
-        parseUnits("400"),
-      ]),
+      value: "0x56bc75e2d63100000", // 100 ETH
     },
   ]);
-
-  await PROVIDER.send("hardhat_stopImpersonatingAccount", [ETH_WHALE]);
 }
 
 const options = {
@@ -82,7 +76,7 @@ describe("swap", () => {
       rpc: rpcUrls.default,
     });
     await metamask.switchNetwork("Ethereum Mainnet");
-    await metamask.importPK(TEST_WALLET_PRIVATE_KEY);
+    await metamask.importPK(TEST_ACCOUNT_PRIVATE_KEY);
     await testPage.goto("http://localhost:3000/swap");
     await testPage.bringToFront();
     const document = await getDocument(testPage);

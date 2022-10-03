@@ -34,9 +34,9 @@ open http://localhost:3000
 
 ## Testing
 
-The end-to-end (E2E) test command tests user flows from beginning to end using browser automation. First, Hardhat spins up a local node and forks Ethereum mainnet. A script sends JSON-RPC calls to the node in order to setup the test accounts. This involves impersonating an ERC-20 whale and moving an amount of ERC-20 tokens to the test account. Second, the test command launches up Chrome with Puppeteer, which configures & connects MetaMask with the test account. Finally, Puppeteer runs through user flow(s) from start to end. For example, from MetaMask wallet connection -> entering a trade amount -> submitting a trade.
+The end-to-end (E2E) test command tests user flows from beginning to end using browser automation. First, Hardhat spins up a [local Ethereum network](https://hardhat.org/hardhat-network/docs/overview#hardhat-network) node that is a [fork of Ethereum mainnet](https://hardhat.org/hardhat-network/docs/guides/forking-other-networks#forking-other-networks). A script sends JSON-RPC calls to the node to setup the test account. This involves transferring an amount of ETH from a Hardhat account to the test account, then [wrapping](https://academy.binance.com/en/articles/what-is-wrapped-ether-weth-and-how-to-wrap-it#:~:text=you%20send%20your%20ETH%20to%20a%20smart%20contract%20that%20then%20provides%20WETH%20in%20return) the ETH to get WETH (ERC-20). WETH is necessary because the application swaps ERC-20 tokens and ETH is not ERC-20 compliant. Second, the test command launches up Chrome with Puppeteer, which configures & connects MetaMask with the test account. Finally, Puppeteer runs through user flow(s) from start to end. For example, from MetaMask wallet connection -> entering a trade amount -> submitting a trade -> trade confirmation.
 
-A GitHub Action [runs the tests](https://github.com/hzhu/remix-swap/blob/main/.github/workflows/end-to-end-tests.yml#L18-L25) in a headless browser using xvfb.
+A GitHub Action [runs the tests](https://github.com/hzhu/remix-swap/blob/main/.github/workflows/end-to-end-tests.yml#L18-L25) in a headless browser using [xvfb](https://en.wikipedia.org/wiki/Xvfb).
 
 ```
 npm run test:e2e

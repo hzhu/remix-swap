@@ -21,5 +21,6 @@ jobs:
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
           RPC_TEST_URL: ${{ secrets.RPC_TEST_URL }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           run: npm run test:e2e
