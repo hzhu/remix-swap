@@ -16,7 +16,7 @@ import {
   RainbowKitProvider,
   useAddRecentTransaction,
 } from "@rainbow-me/rainbowkit";
-import { TOKENS } from "~/constants";
+import { TOKENS, ZERO_EX_PROXY } from "~/constants";
 import { useTheme } from "~/utils/theme-provider";
 import { getInitialState, reducer } from "./reducer";
 import { getSession } from "~/session.server";
@@ -154,12 +154,12 @@ function Swap({ lang, translations }: SwapProps) {
   const isHardhat = params.get("network") === "hardhat";
 
   const { config } = usePrepareSendTransaction({
-    chainId: state.quote?.chainId,
+    chainId: isHardhat ? 31337 : state.quote?.chainId,
     request: {
-      to: state.quote?.to,
+      to: state.quote?.to || ZERO_EX_PROXY,
       from: address,
       data: state.quote?.data,
-      chainId: isHardhat ? 1 : state.quote?.chainId,
+      chainId: isHardhat ? 31337 : state.quote?.chainId,
       gasLimit,
       gasPrice: state.quote?.gasPrice,
     },
