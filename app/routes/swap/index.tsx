@@ -4,9 +4,12 @@ import { useReducer, useCallback } from "react";
 import {
   useSigner,
   useAccount,
+  useBalance,
   WagmiConfig,
   useSendTransaction,
   usePrepareSendTransaction,
+  useContractRead,
+  erc20ABI,
 } from "wagmi";
 import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
 import {
@@ -57,6 +60,7 @@ import type { SuccessFn } from "~/hooks";
 import type { Quote } from "~/hooks/useFetchDebounceQuote";
 
 import spinnerUrl from "~/styles/spinner.css";
+import { formatUnits } from "ethers/lib/utils";
 
 type SwapTranslations = PickTranslations<
   | "Buy"
@@ -184,6 +188,19 @@ function Swap({ lang, translations }: SwapProps) {
     },
   });
 
+  const { data, error, isError } = useContractRead({
+    address: TOKENS[state.sellToken].address,
+    abi: erc20ABI,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+  });
+
+  const sellBalance = data
+    ? Number(
+        formatUnits(data.toString(), TOKENS[state.sellToken].decimal)
+      ).toFixed(2)
+    : "";
+
   const errorMessage = state.error
     ? translations[state.error.msg as ZeroExApiErrorMessages]
         .replace("[[token]]", state.sellToken.toUpperCase())
@@ -211,7 +228,7 @@ function Swap({ lang, translations }: SwapProps) {
         </Link>
         <hr />
         <form>
-          <div className="mt-12 flex items-center">
+          <div className="mt-12 flex items-start justify-center">
             <label htmlFor="sell-select" className="sr-only">
               {translations["Sell"]}
               <span role="presentation">:</span>
@@ -253,20 +270,31 @@ function Swap({ lang, translations }: SwapProps) {
             <label htmlFor="sell-amount" className="sr-only">
               {translations["Sell Amount"]}
             </label>
-            <input
-              type="text"
-              id="sell-amount"
-              autoCorrect="off"
-              autoComplete="off"
-              spellCheck="false"
-              inputMode="decimal"
-              pattern="^[0-9]*[.,]?[0-9]*$"
-              value={state.sellAmount || ""}
-              className={clsx(selectStyles, "w-2/3", "sm:w-3/5")}
-              onChange={(e) =>
-                onSellAmountChange({ e, state, dispatch, fetchQuote })
-              }
-            />
+            <div>
+              <input
+                type="text"
+                id="sell-amount"
+                autoCorrect="off"
+                autoComplete="off"
+                spellCheck="false"
+                inputMode="decimal"
+                pattern="^[0-9]*[.,]?[0-9]*$"
+                value={state.sellAmount || ""}
+                className={clsx(selectStyles)}
+                onChange={(e) =>
+                  onSellAmountChange({ e, state, dispatch, fetchQuote })
+                }
+              />
+                {sellBalance ? (
+                  <div className="flex">
+                    <div className="text-xs mr-1">Balance: {sellBalance}</div>
+                    <button className="text-xs italic" onClick={() => {
+                      // should refactor onSellAmountChange to take a value, not event first
+                    }}>(max)</button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
           <div className="mt-3 flex justify-center">
             <DirectionButton
@@ -287,7 +315,7 @@ function Swap({ lang, translations }: SwapProps) {
             />
           </div>
 
-          <div className="mt-3 flex items-center">
+          <div className="mt-3 flex items-start justify-center">
             <label htmlFor="buy-select" className="sr-only">
               {translations["Buy"]}
               <span role="presentation">:</span>

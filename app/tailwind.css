@@ -556,6 +556,10 @@ video {
   margin-right: 0.5rem;
 }
 
+.mr-1 {
+  margin-right: 0.25rem;
+}
+
 .inline-block {
   display: inline-block;
 }
@@ -584,6 +588,10 @@ video {
   height: 1.75rem;
 }
 
+.h-10 {
+  height: 2.5rem;
+}
+
 .w-full {
   width: 100%;
 }
@@ -608,6 +616,14 @@ video {
   width: 66.666667%;
 }
 
+.w-10 {
+  width: 2.5rem;
+}
+
+.w-6 {
+  width: 1.5rem;
+}
+
 .max-w-screen-sm {
   max-width: 640px;
 }
@@ -623,6 +639,10 @@ video {
 
 .flex-col {
   flex-direction: column;
+}
+
+.items-start {
+  align-items: flex-start;
 }
 
 .items-end {
@@ -721,6 +741,10 @@ video {
 
 .font-normal {
   font-weight: 400;
+}
+
+.italic {
+  font-style: italic;
 }
 
 .text-gray-800 {
