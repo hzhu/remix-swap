@@ -1,5 +1,5 @@
 /*
-! tailwindcss v3.2.2 | MIT License | https://tailwindcss.com
+! tailwindcss v3.2.3 | MIT License | https://tailwindcss.com
 */
 
 /*
@@ -548,12 +548,24 @@ video {
   margin-top: 0.75rem;
 }
 
+.mr-1 {
+  margin-right: 0.25rem;
+}
+
 .mt-12 {
   margin-top: 3rem;
 }
 
 .mr-2 {
   margin-right: 0.5rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mt-5 {
+  margin-top: 1.25rem;
 }
 
 .inline-block {
@@ -600,14 +612,6 @@ video {
   width: 1.75rem;
 }
 
-.w-1\/3 {
-  width: 33.333333%;
-}
-
-.w-2\/3 {
-  width: 66.666667%;
-}
-
 .max-w-screen-sm {
   max-width: 640px;
 }
@@ -623,6 +627,10 @@ video {
 
 .flex-col {
   flex-direction: column;
+}
+
+.items-start {
+  align-items: flex-start;
 }
 
 .items-end {
@@ -723,6 +731,10 @@ video {
   font-weight: 400;
 }
 
+.italic {
+  font-style: italic;
+}
+
 .text-gray-800 {
   --tw-text-opacity: 1;
   color: rgb(31 41 55 / var(--tw-text-opacity));
@@ -775,6 +787,15 @@ video {
   background-color: rgb(37 99 235 / var(--tw-bg-opacity));
 }
 
+.hover\:text-slate-50:hover {
+  --tw-text-opacity: 1;
+  color: rgb(248 250 252 / var(--tw-text-opacity));
+}
+
+.hover\:underline:hover {
+  text-decoration-line: underline;
+}
+
 .active\:bg-blue-600:active {
   --tw-bg-opacity: 1;
   background-color: rgb(37 99 235 / var(--tw-bg-opacity));
@@ -785,9 +806,27 @@ video {
   background-color: rgb(29 78 216 / var(--tw-bg-opacity));
 }
 
+.active\:text-slate-50:active {
+  --tw-text-opacity: 1;
+  color: rgb(248 250 252 / var(--tw-text-opacity));
+}
+
+.active\:underline:active {
+  text-decoration-line: underline;
+}
+
+.disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed;
+}
+
 .disabled\:bg-blue-300:disabled {
   --tw-bg-opacity: 1;
   background-color: rgb(147 197 253 / var(--tw-bg-opacity));
+}
+
+.disabled\:bg-slate-200:disabled {
+  --tw-bg-opacity: 1;
+  background-color: rgb(226 232 240 / var(--tw-bg-opacity));
 }
 
 .disabled\:text-slate-500:disabled {
@@ -852,18 +891,19 @@ video {
   background-color: rgb(59 130 246 / 0.5);
 }
 
+.dark .dark\:disabled\:bg-slate-700:disabled {
+  --tw-bg-opacity: 1;
+  background-color: rgb(51 65 85 / var(--tw-bg-opacity));
+}
+
 @media (min-width: 640px) {
   .sm\:my-4 {
     margin-top: 1rem;
     margin-bottom: 1rem;
   }
 
-  .sm\:w-2\/5 {
-    width: 40%;
-  }
-
-  .sm\:w-3\/5 {
-    width: 60%;
+  .sm\:w-full {
+    width: 100%;
   }
 
   .sm\:p-6 {

@@ -1,3 +1,4 @@
+export { Max } from './Max'
 export { Spinner } from './Spinner'
 export { ExchangeRate } from "./ExchangeRate";
 export { CustomConnect } from './CustomConnect'

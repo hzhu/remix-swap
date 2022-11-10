@@ -2,9 +2,11 @@ import clsx from "clsx";
 import { json } from "@remix-run/node";
 import { useReducer, useCallback } from "react";
 import {
+  erc20ABI,
   useSigner,
   useAccount,
   WagmiConfig,
+  useContractRead,
   useSendTransaction,
   usePrepareSendTransaction,
 } from "wagmi";
@@ -38,6 +40,7 @@ import {
   placeOrder,
 } from "./handlers";
 import {
+  Max,
   Spinner,
   ExchangeRate,
   CustomConnect,
@@ -184,6 +187,13 @@ function Swap({ lang, translations }: SwapProps) {
     },
   });
 
+  const { data: balance } = useContractRead({
+    address: TOKENS[state.sellToken].address,
+    args: address ? [address] : undefined,
+    functionName: "balanceOf",
+    abi: erc20ABI,
+  });
+
   const errorMessage = state.error
     ? translations[state.error.msg as ZeroExApiErrorMessages]
         .replace("[[token]]", state.sellToken.toUpperCase())
@@ -211,7 +221,7 @@ function Swap({ lang, translations }: SwapProps) {
         </Link>
         <hr />
         <form>
-          <div className="mt-12 flex items-center">
+          <div className="mt-12 flex items-start justify-center">
             <label htmlFor="sell-select" className="sr-only">
               {translations["Sell"]}
               <span role="presentation">:</span>
@@ -227,7 +237,7 @@ function Swap({ lang, translations }: SwapProps) {
               name="sell"
               id="sell-select"
               value={state.sellToken}
-              className={clsx(selectStyles, "mr-2", "w-1/3", "sm:w-2/5")}
+              className={clsx(selectStyles, "mr-2", "w-50", "sm:w-full")}
               onChange={(e) => {
                 onSellTokenSelect(e, state, dispatch);
                 if (e.target.value === state.buyToken) {
@@ -253,22 +263,36 @@ function Swap({ lang, translations }: SwapProps) {
             <label htmlFor="sell-amount" className="sr-only">
               {translations["Sell Amount"]}
             </label>
-            <input
-              type="text"
-              id="sell-amount"
-              autoCorrect="off"
-              autoComplete="off"
-              spellCheck="false"
-              inputMode="decimal"
-              pattern="^[0-9]*[.,]?[0-9]*$"
-              value={state.sellAmount || ""}
-              className={clsx(selectStyles, "w-2/3", "sm:w-3/5")}
-              onChange={(e) =>
-                onSellAmountChange({ e, state, dispatch, fetchQuote })
-              }
-            />
+            <div className="w-full">
+              <input
+                type="text"
+                id="sell-amount"
+                autoCorrect="off"
+                autoComplete="off"
+                spellCheck="false"
+                inputMode="decimal"
+                value={state.sellAmount || ""}
+                pattern="^[0-9]*[.,]?[0-9]*$"
+                disabled={balance?.toHexString() === "0x00"}
+                onChange={(e) =>
+                  onSellAmountChange({ e, state, dispatch, fetchQuote })
+                }
+                className={clsx(
+                  selectStyles,
+                  "w-full",
+                  "disabled:bg-slate-200  dark:disabled:bg-slate-700  disabled:cursor-not-allowed"
+                )}
+              />
+              <Max
+                state={state}
+                dispatch={dispatch}
+                address={address}
+                balance={balance}
+                fetchQuote={fetchQuote}
+              />
+            </div>
           </div>
-          <div className="mt-3 flex justify-center">
+          <div className="mt-4 flex justify-center">
             <DirectionButton
               type="button"
               disabled={state.error?.hasOwnProperty("msg") || state.fetching}
@@ -287,7 +311,7 @@ function Swap({ lang, translations }: SwapProps) {
             />
           </div>
 
-          <div className="mt-3 flex items-center">
+          <div className="mt-5 flex items-start justify-center">
             <label htmlFor="buy-select" className="sr-only">
               {translations["Buy"]}
               <span role="presentation">:</span>
@@ -303,7 +327,7 @@ function Swap({ lang, translations }: SwapProps) {
               name="buy"
               id="buy-select"
               value={state.buyToken}
-              className={clsx(selectStyles, "mr-2", "w-1/3", "sm:w-2/5")}
+              className={clsx(selectStyles, "mr-2", "w-50", "sm:w-full")}
               onChange={(e) => {
                 onBuyTokenSelect(e, state, dispatch);
                 if (e.target.value === state.sellToken) {
@@ -338,7 +362,7 @@ function Swap({ lang, translations }: SwapProps) {
               inputMode="decimal"
               value={state.buyAmount || ""}
               pattern="^[0-9]*[.,]?[0-9]*$"
-              className={clsx(selectStyles, "w-2/3", "sm:w-3/5")}
+              className={clsx(selectStyles, "w-full")}
               onChange={(e) => {
                 onBuyAmountChange({ e, state, dispatch, fetchQuote });
               }}
