@@ -231,7 +231,7 @@ export function onBuyAmountChange({
 
     if (value && value !== "0") {
       const { sellToken, buyToken, network } = state;
-      const decimal = TOKENS[sellToken].decimal;
+      const decimal = TOKENS[buyToken].decimal;
       const buyAmount = parseUnits(value, decimal).toString();
       const takerAddress = getTakerAddress(state);
       const params = { sellToken, buyToken, buyAmount, takerAddress };
