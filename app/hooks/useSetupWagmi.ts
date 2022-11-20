@@ -34,31 +34,33 @@ export function useSetupWagmi({
   useEffect(() => {
     const testChains =
       enablePublicTestnets
-        ? [chain.goerli, chain.kovan, chain.rinkeby, chain.ropsten]
+        ? [chain.goerli]
         : [];
 
-    const { chains, provider } = configureChains(
-      [
-        chain.mainnet,
-        chain.polygon,
-        chain.hardhat,
-        // chain.optimism,
-        // chain.arbitrum,
-        ...testChains,
-      ],
-      [alchemyProvider({ apiKey: alchemyId }), publicProvider()]
-    );
-
-    const { connectors } = getDefaultWallets({ appName, chains });
-
-    const wagmiClient = createClient({
-      provider,
-      connectors,
-      autoConnect: true,
-    });
-
-    setChains(chains);
-    setClient(wagmiClient);
+    if (alchemyId) {
+      const { chains, provider } = configureChains(
+        [
+          chain.mainnet,
+          chain.polygon,
+          chain.hardhat,
+          // chain.optimism,
+          // chain.arbitrum,
+          ...testChains,
+        ],
+        [alchemyProvider({ apiKey: alchemyId }), publicProvider()]
+      );
+  
+      const { connectors } = getDefaultWallets({ appName, chains });
+  
+      const wagmiClient = createClient({
+        provider,
+        connectors,
+        autoConnect: true,
+      });
+  
+      setChains(chains);
+      setClient(wagmiClient);
+    }
   }, [appName, alchemyId, enablePublicTestnets]);
 
   return { client, chains };
