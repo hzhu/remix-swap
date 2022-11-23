@@ -189,13 +189,6 @@ function Swap({ lang, translations }: SwapProps) {
     },
   });
 
-  const { data: balance } = useContractRead({
-    address: TOKENS[state.sellToken].address,
-    args: address ? [address] : undefined,
-    functionName: "balanceOf",
-    abi: erc20ABI,
-  });
-
   const errorMessage = state.error
     ? translations[state.error.msg as ZeroExApiErrorMessages]
         .replace("[[token]]", state.sellToken.toUpperCase())
@@ -281,8 +274,7 @@ function Swap({ lang, translations }: SwapProps) {
                   <Max
                     state={state}
                     dispatch={dispatch}
-                    address={address}
-                    balance={balance}
+                    address={address}                    
                     fetchQuote={fetchQuote}
                   />
                 </>

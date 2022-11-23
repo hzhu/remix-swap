@@ -1,15 +1,15 @@
 import { formatUnits } from "@ethersproject/units";
+import { erc20ABI, useContractRead } from "wagmi";
+import { TOKENS } from "~/constants";
+
 import type { Dispatch } from "react";
-import type { BigNumber } from "@ethersproject/bignumber";
 import type { DebouncedFetch } from "~/hooks/useFetchDebounceQuote";
 import type { ActionTypes, IReducerState } from "../routes/swap/reducer";
-import { TOKENS } from "~/constants";
 
 interface MaxArgs {
   state: IReducerState;
   dispatch: Dispatch<ActionTypes>;
-  address?: string;
-  balance: BigNumber | undefined;
+  address: `0x${string}`
   fetchQuote?: DebouncedFetch;
 }
 
@@ -17,9 +17,15 @@ export function Max({
   state,
   dispatch,
   address,
-  balance,
   fetchQuote,
 }: MaxArgs) {
+  const { data: balance } = useContractRead({
+    address: TOKENS[state.sellToken].address,
+    functionName: "balanceOf",
+    args: [address],
+    abi: erc20ABI,
+  });
+
   const sellBalance = balance
     ? formatUnits(balance.toString(), TOKENS[state.sellToken].decimal)
     : "";
