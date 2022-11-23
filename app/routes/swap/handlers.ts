@@ -9,7 +9,7 @@ import type {
   FetchSignerResult,
   SendTransactionUnpreparedRequest,
 } from "@wagmi/core";
-import type { Dispatch, ChangeEvent, MutableRefObject } from "react";
+import type { Dispatch, ChangeEvent } from "react";
 import type { ActionTypes } from "./reducer";
 import type { IReducerState } from "./reducer";
 import type {
@@ -51,6 +51,7 @@ export async function onSellTokenSelect(
     dispatch({ type: "set buy amount", payload: state.sellAmount });
     dispatch({ type: "set sell amount", payload: "" });
     dispatch({ type: "set direction", payload: "buy" });
+    // TODO: check if user has enough tokens to sell; otherwise app crashes
     const quote = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
     dispatch({ type: "set quote", payload: quote });
   } else {

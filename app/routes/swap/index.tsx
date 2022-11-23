@@ -41,12 +41,14 @@ import {
 } from "./handlers";
 import {
   Max,
+  Input, 
   Spinner,
   ExchangeRate,
   CustomConnect,
   LanguageSelect,
   DarkModeToggle,
   DirectionButton,
+  InputWithAccount
 } from "~/components";
 import { shorten, validateResponseData } from "./utils";
 import type { FC } from "react";
@@ -264,32 +266,36 @@ function Swap({ lang, translations }: SwapProps) {
               {translations["Sell Amount"]}
             </label>
             <div className="w-full">
-              <input
-                type="text"
-                id="sell-amount"
-                autoCorrect="off"
-                autoComplete="off"
-                spellCheck="false"
-                inputMode="decimal"
-                value={state.sellAmount || ""}
-                pattern="^[0-9]*[.,]?[0-9]*$"
-                disabled={balance?.toHexString() === "0x00"}
-                onChange={(e) =>
-                  onSellAmountChange({ e, state, dispatch, fetchQuote })
-                }
-                className={clsx(
-                  selectStyles,
-                  "w-full",
-                  "disabled:bg-slate-200  dark:disabled:bg-slate-700  disabled:cursor-not-allowed"
-                )}
-              />
-              <Max
-                state={state}
-                dispatch={dispatch}
-                address={address}
-                balance={balance}
-                fetchQuote={fetchQuote}
-              />
+              {address ? (
+                <>
+                  <InputWithAccount
+                    id="sell-amount"
+                    address={address}
+                    className={selectStyles}
+                    value={state.sellAmount || ""}
+                    contractAddress={TOKENS[state.sellToken].address}
+                    onChange={(e) =>
+                      onSellAmountChange({ e, state, dispatch, fetchQuote })
+                    }
+                  />
+                  <Max
+                    state={state}
+                    dispatch={dispatch}
+                    address={address}
+                    balance={balance}
+                    fetchQuote={fetchQuote}
+                  />
+                </>
+              ) : (
+                <Input
+                  id="sell-amount"
+                  className={selectStyles}
+                  value={state.sellAmount || ""}
+                  onChange={(e) =>
+                    onSellAmountChange({ e, state, dispatch, fetchQuote })
+                  }
+                />
+              )}
             </div>
           </div>
           <div className="mt-4 flex justify-center">
