@@ -18,7 +18,7 @@ export function useNetworkStateSync(dispatch: Dispatch<ActionTypes>) {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // FIX: setting serarch params here adds to history stack & prevents navigating back home
-  // maybe try persisting network query into cookie instead and sending a request to 
+  // maybe try persisting network query into cookie instead and sending a request to
   // the server to set the query params...
   useEffect(() => {
     const network = searchParams.get("network");

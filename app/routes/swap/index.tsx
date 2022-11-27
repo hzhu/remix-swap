@@ -1,24 +1,13 @@
-import clsx from "clsx";
 import { json } from "@remix-run/node";
-import { useReducer, useCallback } from "react";
-import {
-  erc20ABI,
-  useSigner,
-  useAccount,
-  WagmiConfig,
-  useContractRead,
-  useSendTransaction,
-  usePrepareSendTransaction,
-} from "wagmi";
-import { Link, useLoaderData, useSearchParams } from "@remix-run/react";
+import { useReducer } from "react";
+import { useAccount, WagmiConfig } from "wagmi";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 import {
   lightTheme,
   darkTheme,
   ConnectButton,
   RainbowKitProvider,
-  useAddRecentTransaction,
 } from "@rainbow-me/rainbowkit";
-import { TOKENS, ZERO_EX_PROXY } from "~/constants";
 import { useTheme } from "~/utils/theme-provider";
 import { getInitialState, reducer } from "./reducer";
 import { getSession } from "~/session.server";
@@ -26,31 +15,11 @@ import {
   getTranslations,
   zeroExApiErrorMessages,
 } from "../../translations.server";
-import {
-  useSetupWagmi,
-  useNetworkUrlSync,
-  useFetchDebounceQuote,
-} from "~/hooks";
-import {
-  onBuyTokenSelect,
-  onDirectionChange,
-  onSellTokenSelect,
-  onSellAmountChange,
-  onBuyAmountChange,
-  placeOrder,
-} from "./handlers";
-import {
-  Max,
-  Input, 
-  Spinner,
-  ExchangeRate,
-  CustomConnect,
-  LanguageSelect,
-  DarkModeToggle,
-  DirectionButton,
-  InputWithAccount
-} from "~/components";
-import { shorten, validateResponseData } from "./utils";
+import { useSetupWagmi, useNetworkUrlSync } from "~/hooks";
+import { LanguageSelect, DarkModeToggle } from "~/components";
+import { PriceReview } from "./PriceReview";
+import { QuoteReview } from "./QuoteReview";
+
 import type { FC } from "react";
 import type { LoaderArgs, LinksFunction } from "@remix-run/node";
 import type {
@@ -58,17 +27,25 @@ import type {
   PickTranslations,
   ZeroExApiErrorMessages,
 } from "../../translations.server";
-import type { SuccessFn } from "~/hooks";
-import type { Quote } from "~/hooks/useFetchDebounceQuote";
 
 import spinnerUrl from "~/styles/spinner.css";
 
-type SwapTranslations = PickTranslations<
+export type SwapTranslations = PickTranslations<
+  | "Max"
   | "Buy"
   | "Sell"
   | "Buy Amount"
   | "Sell Amount"
   | "Place Order"
+  | "Balance"
+  | "Back"
+  | "You pay"
+  | "You receive"
+  | "Submit Order"
+  | "Review Order"
+  | "Submitting"
+  | "Approving"
+  | "Approve"
   | "Processing"
   | "Connect Wallet"
   | "Select a language"
@@ -88,22 +65,32 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: spinnerUrl },
 ];
 
-// Only abstract out for long, shared classes — doing so maybe D.R.Y, but removes the benefits of Tailwind + Intelisense.
-const selectStyles = `border rounded-md text-xl transition-[background] dark:transition-[background] duration-500 dark:duration-500 bg-slate-50 dark:text-slate-50 dark:bg-slate-900`;
 export const primaryButton = {
-  element: `rounded-sm text-slate-50 transition-all duration-200 bg-blue-500 dark:bg-blue-500 disabled:text-slate-100 disabled:opacity-50`,
-  pseudo: `hover:bg-blue-600 active:bg-blue-700 dark:hover:bg-blue-500/75 dark:active:bg-blue-500/50`,
+  element:
+    "rounded-sm text-slate-50 transition-all duration-200 bg-blue-500 dark:bg-blue-500 disabled:text-slate-100 disabled:opacity-50",
+  pseudo:
+    "hover:bg-blue-600 active:bg-blue-700 dark:hover:bg-blue-500/75 dark:active:bg-blue-500/50",
 };
 
 export const loader = async ({ request }: LoaderArgs) => {
   const session = await getSession(request);
   const lang = session.getLang();
   const translations = getTranslations(lang, [
+    "Max",
     "Buy",
     "Sell",
+    "Back",
+    "Balance",
+    "You pay",
+    "You receive",
+    "Submit Order",
+    "Submitting",
+    "Approving",
+    "Approve",
     "Buy Amount",
     "Sell Amount",
     "Place Order",
+    "Review Order",
     "Processing",
     "Connect Wallet",
     "Select a language",
@@ -129,71 +116,18 @@ export const loader = async ({ request }: LoaderArgs) => {
 };
 
 function Swap({ lang, translations }: SwapProps) {
-  const { isConnected, address } = useAccount();
-  const { data: signer } = useSigner();
-  const addRecentTransaction = useAddRecentTransaction();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [state, dispatch] = useReducer(
-    reducer,
-    getInitialState(searchParams, address)
-  );
+  const [searchParams] = useSearchParams();
+  const [state, dispatch] = useReducer(reducer, getInitialState(searchParams));
 
   useNetworkUrlSync(dispatch);
 
-  const onQuoteSuccess = useCallback<SuccessFn>((data) => {
-    const dataOrError = validateResponseData(data);
-    if ("msg" in dataOrError) {
-      dispatch({ type: "error", payload: dataOrError });
-    } else {
-      dispatch({ type: "set quote", payload: data as Quote });
-    }
-  }, []);
-
-  const fetchQuote = useFetchDebounceQuote(onQuoteSuccess);
-
-  const gasLimit = state.quote?.gas
-    ? Math.round(Number(state.quote.gas) * 1.2).toString()
-    : undefined;
-
-  const params = new URLSearchParams(window.location.search);
-  const isHardhat = params.get("network") === "hardhat";
-
-  const { config } = usePrepareSendTransaction({
-    chainId: isHardhat ? 31337 : state.quote?.chainId,
-    request: {
-      to: state.quote?.to || ZERO_EX_PROXY,
-      from: address,
-      data: state.quote?.data,
-      chainId: isHardhat ? 31337 : state.quote?.chainId,
-      gasLimit,
-      gasPrice: state.quote?.gasPrice,
-    },
-  });
-
-  const { isLoading, sendTransaction } = useSendTransaction({
-    ...config,
-    onSettled: (_, error) => {
-      if (error === null) {
-        const btn = document.querySelector<HTMLButtonElement>(
-          "body > div > header > div > button:nth-child(2)"
-        );
-        if (btn) {
-          btn.click();
-        }
-        dispatch({ type: "set sell amount", payload: "" });
-        dispatch({ type: "set buy amount", payload: "" });
+  const { address } = useAccount({
+    onConnect: ({ address }) => {
+      if (address) {
+        dispatch({ type: "set account", payload: address });
       }
     },
-    onSuccess: ({ hash }) => {
-      addRecentTransaction({ hash, description: shorten(hash) });
-    },
   });
-
-  const errorMessage = state.error
-    ? translations[state.error.msg as ZeroExApiErrorMessages]
-        .replace("[[token]]", state.sellToken.toUpperCase())
-        .replace("[[code]]", state.error.code.toString())
-    : "";
 
   return (
     <>
@@ -204,219 +138,30 @@ function Swap({ lang, translations }: SwapProps) {
         />
         <LanguageSelect lang={lang} label={translations["Select a language"]} />
       </header>
-      <div className="p-3 mx-auto max-w-screen-sm ">
-        <Link to="/">
+      <div className="p-3 mx-auto max-w-screen-sm">
+        <div className="flex justify-center">
           <span
             role="img"
             aria-label={translations["sip a coffee and trade"]}
-            className="inline-block my-3 sm:text-5xl"
+            className="inline-block my-3 text-5xl select-none"
           >
             ☕
           </span>
-        </Link>
-        <hr />
-        <form>
-          <div className="mt-12 flex items-start justify-center">
-            <label htmlFor="sell-select" className="sr-only">
-              {translations["Sell"]}
-              <span role="presentation">:</span>
-            </label>
-            <img
-              alt={state.sellToken}
-              className="h-7 w-7 mr-2 rounded-md"
-              src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${
-                TOKENS[state.sellToken].address
-              }/logo.png`}
-            />
-            <select
-              name="sell"
-              id="sell-select"
-              value={state.sellToken}
-              className={clsx(selectStyles, "mr-2", "w-50", "sm:w-full")}
-              onChange={(e) => {
-                onSellTokenSelect(e, state, dispatch);
-                if (e.target.value === state.buyToken) {
-                  setSearchParams({
-                    ...Object.fromEntries(searchParams),
-                    sell: state.buyToken,
-                    buy: state.sellToken,
-                  });
-                } else {
-                  setSearchParams({
-                    ...Object.fromEntries(searchParams),
-                    sell: e.target.value,
-                  });
-                }
-              }}
-            >
-              {/* <option value="">--Choose a token--</option> */}
-              <option value="usdc">USDC</option>
-              <option value="dai">DAI</option>
-              <option value="matic">MATIC</option>
-              <option value="weth">WETH</option>
-            </select>
-            <label htmlFor="sell-amount" className="sr-only">
-              {translations["Sell Amount"]}
-            </label>
-            <div className="w-full">
-              {address ? (
-                <>
-                  <InputWithAccount
-                    id="sell-amount"
-                    address={address}
-                    className={selectStyles}
-                    value={state.sellAmount || ""}
-                    contractAddress={TOKENS[state.sellToken].address}
-                    onChange={(e) =>
-                      onSellAmountChange({ e, state, dispatch, fetchQuote })
-                    }
-                  />
-                  <Max
-                    state={state}
-                    dispatch={dispatch}
-                    address={address}                    
-                    fetchQuote={fetchQuote}
-                  />
-                </>
-              ) : (
-                <Input
-                  id="sell-amount"
-                  className={selectStyles}
-                  value={state.sellAmount || ""}
-                  onChange={(e) =>
-                    onSellAmountChange({ e, state, dispatch, fetchQuote })
-                  }
-                />
-              )}
-            </div>
-          </div>
-          <div className="mt-4 flex justify-center">
-            <DirectionButton
-              type="button"
-              disabled={state.error?.hasOwnProperty("msg") || state.fetching}
-              aria-label={translations["switch trading direction"]}
-              onClick={() => {
-                dispatch({ type: "reverse trade direction" });
-                if (state.buyAmount || state.sellAmount) {
-                  onDirectionChange(state, dispatch);
-                }
-                setSearchParams({
-                  ...Object.fromEntries(searchParams),
-                  sell: state.buyToken,
-                  buy: state.sellToken,
-                });
-              }}
-            />
-          </div>
-
-          <div className="mt-5 flex items-start justify-center">
-            <label htmlFor="buy-select" className="sr-only">
-              {translations["Buy"]}
-              <span role="presentation">:</span>
-            </label>
-            <img
-              alt={state.buyToken}
-              className="h-7 w-7 mr-2 rounded-md"
-              src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${
-                TOKENS[state.buyToken].address
-              }/logo.png`}
-            />
-            <select
-              name="buy"
-              id="buy-select"
-              value={state.buyToken}
-              className={clsx(selectStyles, "mr-2", "w-50", "sm:w-full")}
-              onChange={(e) => {
-                onBuyTokenSelect(e, state, dispatch);
-                if (e.target.value === state.sellToken) {
-                  setSearchParams({
-                    ...Object.fromEntries(searchParams),
-                    sell: state.buyToken,
-                    buy: state.sellToken,
-                  });
-                } else {
-                  setSearchParams({
-                    ...Object.fromEntries(searchParams),
-                    buy: e.target.value,
-                  });
-                }
-              }}
-            >
-              {/* <option value="">--Choose a token--</option> */}
-              <option value="usdc">USDC</option>
-              <option value="dai">DAI</option>
-              <option value="matic">MATIC</option>
-              <option value="weth">WETH</option>
-            </select>
-            <label htmlFor="buy-amount" className="sr-only">
-              {translations["Buy Amount"]}
-            </label>
-            <input
-              type="text"
-              id="buy-amount"
-              autoCorrect="off"
-              autoComplete="off"
-              spellCheck="false"
-              inputMode="decimal"
-              value={state.buyAmount || ""}
-              pattern="^[0-9]*[.,]?[0-9]*$"
-              className={clsx(selectStyles, "w-full")}
-              onChange={(e) => {
-                onBuyAmountChange({ e, state, dispatch, fetchQuote });
-              }}
-            />
-          </div>
-          <div
-            role="region"
-            aria-live="assertive"
-            className="my-3 h-5 text-center sm:my-4"
-          >
-            {state.error?.msg ? (
-              <span className="text-red-600 dark:text-red-400">
-                {errorMessage}
-              </span>
-            ) : state.fetching ? (
-              <span className="flex items-center justify-center">
-                <Spinner />
-                <span className="mx-2 font-normal">
-                  {translations["Fetching best price"]}…
-                </span>
-              </span>
-            ) : (
-              <ExchangeRate
-                quote={state.quote}
-                sellToken={state.sellToken}
-                buyToken={state.buyToken}
-              />
-            )}
-          </div>
-          {isConnected ? (
-            <button
-              type="button"
-              disabled={state.fetching || state.quote === undefined}
-              className={clsx(
-                primaryButton.element,
-                !(state.fetching || state.quote === undefined)
-                  ? primaryButton.pseudo
-                  : "",
-                "py-1 px-2 w-full"
-              )}
-              onClick={() =>
-                placeOrder({
-                  signer,
-                  sendTransaction,
-                  sellTokenAddress: state.quote?.sellTokenAddress,
-                })
-              }
-            >
-              {isLoading
-                ? translations["Processing"]
-                : translations["Place Order"]}
-            </button>
-          ) : (
-            <CustomConnect label={translations["Connect Wallet"]} />
-          )}
-        </form>
+        </div>
+        {state.finalize ? (
+          <QuoteReview
+            state={state}
+            dispatch={dispatch}
+            translations={translations}
+          />
+        ) : (
+          <PriceReview
+            state={state}
+            dispatch={dispatch}
+            address={address}
+            translations={translations}
+          />
+        )}
       </div>
     </>
   );

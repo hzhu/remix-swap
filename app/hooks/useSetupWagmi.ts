@@ -32,19 +32,18 @@ export function useSetupWagmi({
   >();
 
   useEffect(() => {
-    const testChains =
-      enablePublicTestnets
-        ? [chain.goerli, chain.kovan, chain.rinkeby, chain.ropsten]
-        : [];
-
+    const local = window.location.port ? [chain.hardhat] : [];
+    const testChains = enablePublicTestnets
+      ? [chain.goerli, chain.kovan, chain.rinkeby, chain.ropsten]
+      : [];
     const { chains, provider } = configureChains(
       [
         chain.mainnet,
         chain.polygon,
-        chain.hardhat,
         // chain.optimism,
         // chain.arbitrum,
         ...testChains,
+        ...local,
       ],
       [alchemyProvider({ apiKey: alchemyId }), publicProvider()]
     );

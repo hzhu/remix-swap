@@ -2,29 +2,26 @@ import qs from "qs";
 import debounce from "lodash.debounce";
 import { useRef, useEffect } from "react";
 import { ENDPOINTS, CHAIN_IDS } from "~/constants";
+
 import type { DebouncedFunc } from "lodash";
 
-export interface Quote {
+// https://docs.0x.org/0x-api-swap/api-references/get-swap-v1-price#response
+export interface Price {
   chainId: number;
   price: string;
-  guaranteedPrice: string;
   estimatedPriceImpact: string;
-  to: string;
-  data: string;
   value: string;
+  gasPrice: string;
   gas: string;
   estimatedGas: string;
-  gasPrice: string;
   protocolFee: string;
   minimumProtocolFee: string;
   buyTokenAddress: string;
-  sellTokenAddress: string;
   buyAmount: string;
+  sellTokenAddress: string;
   sellAmount: string;
   sources: any[];
-  orders: any[];
   allowanceTarget: string;
-  decodedUniqueId: string;
   sellTokenToEthRate: string;
   buyTokenToEthRate: string;
   expectedSlippage: string | null;
@@ -36,7 +33,8 @@ export interface ZeroExServerError {
   values?: { message: string };
 }
 
-export type SuccessFn = (data: Quote | ZeroExServerError) => void;
+export type SuccessFn = (data: Price | ZeroExServerError) => void;
+
 export type ErrorFn = (error: unknown) => void;
 
 export interface ZeroExApiRequestParams {
@@ -44,13 +42,14 @@ export interface ZeroExApiRequestParams {
   buyToken: string;
   sellAmount?: string;
   buyAmount?: string;
+  takerAddress?: string;
 }
 
 export type DebouncedFetch = DebouncedFunc<
   (params: ZeroExApiRequestParams, network: string) => Promise<void>
 >;
 
-export function useFetchDebounceQuote(
+export function useFetchDebouncePrice(
   onSuccess?: SuccessFn,
   onError?: ErrorFn
 ) {
@@ -59,10 +58,10 @@ export function useFetchDebounceQuote(
   useEffect(() => {
     debouncedRef.current = debounce(async (params, network) => {
       const endpoint = ENDPOINTS[CHAIN_IDS[network]];
-      const URL = `${endpoint}/swap/v1/quote?${qs.stringify(params)}`;
+      const URL = `${endpoint}/swap/v1/price?${qs.stringify(params)}`;
       try {
         const response = await fetch(URL);
-        const data: Quote | ZeroExServerError = await response.json();
+        const data: Price | ZeroExServerError = await response.json();
         onSuccess && onSuccess(data);
       } catch (error) {
         onError && onError(error);

@@ -4,14 +4,18 @@ import type { FC } from "react";
 import type { Language } from "~/translations.server";
 
 // TODO: support RTL
-export const LanguageSelect: FC<{ lang: Language, label: string }> = ({ lang, label }) => {
+export const LanguageSelect: FC<{ lang: Language; label: string }> = ({
+  lang,
+  label,
+}) => {
   const fetcher = useFetcher();
   const [_, setSearchParams] = useSearchParams();
 
   return (
     <>
       <label htmlFor="language-select" hidden>
-        {label}<span role="presentation">:</span>
+        {label}
+        <span role="presentation">:</span>
       </label>
       <select
         value={lang}
@@ -19,8 +23,8 @@ export const LanguageSelect: FC<{ lang: Language, label: string }> = ({ lang, la
         className="mt-3 border text-sm transition-[background] dark:transition-[background] duration-500 dark:duration-500 bg-slate-50 dark:text-slate-50 dark:bg-slate-900"
         onChange={(e) => {
           const params = new URLSearchParams(window.location.search);
-          const network = params.get('network')
-          
+          const network = params.get("network");
+
           setSearchParams({
             ...Object.fromEntries(params),
             network: network ? network : "",

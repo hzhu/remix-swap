@@ -18,7 +18,7 @@ export async function loader({ request }: LoaderArgs) {
     "Switch between light and dark mode",
   ]);
   const data = { lang, translations };
-  
+
   return json(data);
 }
 

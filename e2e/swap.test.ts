@@ -23,7 +23,7 @@ let testPage: Page;
 async function fundTestAccount() {
   const PROVIDER = new JsonRpcProvider("http://127.0.0.1:8545/");
   await PROVIDER.send("hardhat_setNextBlockBaseFeePerGas", ["0x2540be400"]);
-  
+
   // Send 1000 ETH from Hardhat account to test account
   await PROVIDER.send("eth_sendTransaction", [
     {
@@ -97,18 +97,33 @@ describe("swap", () => {
     await sellAmountInput.type("1");
     await testPage.waitForFunction(() => {
       const [btn] = [...document.getElementsByTagName("button")].filter(
-        (node) => node.innerText === "Place Order"
+        (node) => node.innerText === "Approve"
       );
-      return btn.disabled === false ? btn : false;
+      return btn;
     });
-    const placeOrder = await getByText(docElement, /Place Order/i);
-    await placeOrder.press("Enter");
-    await pause(0.25);
+    const approveERC20Spend = await getByText(docElement, /Approve/i);
+    await approveERC20Spend.press("Enter");
     await metamask.confirmTransaction();
-    await pause(0.5);
-    await metamask.confirmTransaction();
-    await testPage.waitForXPath('//div[contains(text(), "Confirmed")]');
     await testPage.bringToFront();
+    await testPage.waitForFunction(() => {
+      const [btn] = [...document.getElementsByTagName("button")].filter(
+        (node) => node.innerText === "Review Order"
+      );
+      return btn;
+    });
+    const reviewOrder = await getByText(docElement, /Review Order/i);
+    await reviewOrder.press("Enter");
+    await testPage.waitForFunction(() => {
+      const [btn] = [...document.getElementsByTagName("button")].filter(
+        (node) => node.innerText === "Submit Order"
+      );
+      return btn;
+    });
+    const submitOrder = await getByText(docElement, /Submit Order/i);
+    await submitOrder.press("Enter");
+    await metamask.confirmTransaction();
+    await testPage.bringToFront();
+    await testPage.waitForXPath('//div[contains(text(), "Confirmed")]');
   });
 
   afterAll(async () => {

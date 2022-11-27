@@ -1,12 +1,15 @@
 import { formatUnits } from "@ethersproject/units";
 import { TOKENS } from "~/constants";
-import type { Quote } from "~/hooks/useFetchDebounceQuote";
-import type { ZeroExClientError } from './utils'
+import type { Price } from "~/hooks/useFetchDebouncePrice";
+import type { Quote } from "~/routes/swap/utils";
+import type { ZeroExClientError } from "./utils";
 
 type TradeDirection = "buy" | "sell";
 
 export interface IReducerState {
   quote?: Quote;
+  price?: Price;
+  finalize: boolean;
   network: string;
   account?: string;
   sellToken: string;
@@ -14,6 +17,7 @@ export interface IReducerState {
   sellAmount?: string;
   buyAmount?: string;
   fetching: boolean;
+  approvalRequired: boolean;
   direction: TradeDirection;
   error?: ZeroExClientError;
 }
@@ -26,7 +30,12 @@ export type ActionTypes =
   | { type: "choose sell token"; payload: string }
   | { type: "choose buy token"; payload: string }
   | { type: "fetching quote"; payload: boolean }
+  | { type: "fetching price"; payload: boolean }
+  | { type: "set finalize order" }
+  | { type: "set account"; payload: string }
+  | { type: "set approval required"; payload: boolean }
   | { type: "set quote"; payload: Quote }
+  | { type: "set price"; payload: Price }
   | { type: "set sell amount"; payload?: string }
   | { type: "set buy amount"; payload?: string }
   | { type: "error"; payload?: ZeroExClientError };
@@ -41,20 +50,20 @@ const initialState: IReducerState = {
   fetching: false,
   account: "",
   error: undefined,
+  finalize: false,
+  approvalRequired: false,
 };
 
 const supportedTokens = new Set(["weth", "usdc", "dai", "matic"]);
 
 export const getInitialState = (
-  searchParams: URLSearchParams,
-  account?: string
+  searchParams: URLSearchParams
 ): IReducerState => {
   const sell = searchParams.get("sell") || initialState.sellToken;
   const buy = searchParams.get("buy") || initialState.buyToken;
 
   return {
     ...initialState,
-    account,
     sellToken: supportedTokens.has(sell) ? sell : initialState.sellToken,
     buyToken: supportedTokens.has(buy) ? buy : initialState.buyToken,
   };
@@ -127,8 +136,6 @@ export const reducer = (
           sellToken: state.buyToken,
         };
       }
-    case "fetching quote":
-      return { ...state, fetching: action.payload };
     case "set quote":
       if (state.direction === "buy") {
         return {
@@ -141,10 +148,9 @@ export const reducer = (
               TOKENS[state.sellToken].decimal
             )
           ).toString(),
-          error: undefined
+          error: undefined,
         };
       }
-
       return {
         ...state,
         fetching: false,
@@ -152,15 +158,72 @@ export const reducer = (
         buyAmount: Number(
           formatUnits(action.payload.buyAmount, TOKENS[state.buyToken].decimal)
         ).toString(),
-        error: undefined
+        error: undefined,
+      };
+    case "set price":
+      if (state.direction === "buy") {
+        return {
+          ...state,
+          fetching: false,
+          price: action.payload,
+          sellAmount: Number(
+            formatUnits(
+              action.payload.sellAmount,
+              TOKENS[state.sellToken].decimal
+            )
+          ).toString(),
+          error: undefined,
+        };
+      }
+      return {
+        ...state,
+        fetching: false,
+        price: action.payload,
+        buyAmount: Number(
+          formatUnits(action.payload.buyAmount, TOKENS[state.buyToken].decimal)
+        ).toString(),
+        error: undefined,
       };
     case "set sell amount":
-      return { ...state, fetching: false, sellAmount: action.payload, error: undefined };
+      return {
+        ...state,
+        fetching: false,
+        sellAmount: action.payload,
+        error: undefined,
+      };
     case "set buy amount":
-      return { ...state, fetching: false, buyAmount: action.payload, error: undefined };
+      return {
+        ...state,
+        fetching: false,
+        buyAmount: action.payload,
+        error: undefined,
+      };
+    case "set approval required":
+      return {
+        ...state,
+        approvalRequired: action.payload,
+      };
+    case "set finalize order":
+      return {
+        ...state,
+        finalize: !state.finalize,
+      };
+    case "set account":
+      return {
+        ...state,
+        account: action.payload,
+      };
+    case "fetching quote":
+    case "fetching price":
+      return { ...state, fetching: action.payload };
     case "error":
       return { ...state, error: action.payload };
+    case "reset":
+      return {
+        ...initialState,
+        account: state.account,
+      };
     default:
-      throw new Error(`Unhandled action type: ${action.type}`);
+      throw new Error(`Unhandled action: ${action}`);
   }
 };

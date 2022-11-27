@@ -1,6 +1,6 @@
-export { useSetupWagmi } from './useSetupWagmi'
-export { useNetworkUrlSync } from './useNetworkUrlSync'
-export { useNetworkStateSync } from './useNetworkStateSync'
+export { useSetupWagmi } from "./useSetupWagmi";
+export { useNetworkUrlSync } from "./useNetworkUrlSync";
+export { useNetworkStateSync } from "./useNetworkStateSync";
 
-export { useFetchDebounceQuote } from './useFetchDebounceQuote'
-export type { SuccessFn } from './useFetchDebounceQuote'
+export { useFetchDebouncePrice } from "./useFetchDebouncePrice";
+export type { SuccessFn } from "./useFetchDebouncePrice";

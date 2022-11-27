@@ -1,41 +1,33 @@
 import qs from "qs";
-import { formatUnits, parseUnits } from "@ethersproject/units";
-import { MaxInt256 } from "@ethersproject/constants";
+import { erc20ABI } from "wagmi";
 import { Contract } from "@ethersproject/contracts";
-import ERC20_ABI from "~/abis/ERC20_ABI.json";
-import { TOKENS, ENDPOINTS, CHAIN_IDS, ZERO_EX_PROXY } from "~/constants";
+import { formatUnits, parseUnits } from "@ethersproject/units";
 import { fetchQuote, validateResponseData } from "./utils";
-import type {
-  FetchSignerResult,
-  SendTransactionUnpreparedRequest,
-} from "@wagmi/core";
+import { TOKENS, ENDPOINTS, CHAIN_IDS, ZERO_EX_PROXY } from "~/constants";
+
+import type { Signer } from "@wagmi/core";
 import type { Dispatch, ChangeEvent } from "react";
 import type { ActionTypes } from "./reducer";
 import type { IReducerState } from "./reducer";
 import type {
-  Quote,
   DebouncedFetch,
-  ZeroExServerError,
-} from "~/hooks/useFetchDebounceQuote";
-
-type UseSendTransactionMutationArgs = {
-  recklesslySetUnpreparedRequest: SendTransactionUnpreparedRequest["request"];
-};
-
-type SendTransactionFn = (
-  overrideConfig?: UseSendTransactionMutationArgs
-) => void;
+  ZeroExApiRequestParams,
+} from "~/hooks/useFetchDebouncePrice";
+import type { Quote } from "~/routes/swap/utils";
+import type { Price } from "~/hooks/useFetchDebouncePrice";
 
 const getTakerAddress = (state: IReducerState) => {
   return state.network === "hardhat" ? undefined : state.account;
 };
 
+// TODO: handle errors or app crash.
 export async function onSellTokenSelect(
   e: ChangeEvent<HTMLSelectElement>,
   state: IReducerState,
   dispatch: Dispatch<ActionTypes>
 ) {
   dispatch({ type: "choose sell token", payload: e.target.value });
+  
   if (state.sellAmount === "") return;
   if (e.target.value === state.buyToken) {
     const params = {
@@ -51,9 +43,16 @@ export async function onSellTokenSelect(
     dispatch({ type: "set buy amount", payload: state.sellAmount });
     dispatch({ type: "set sell amount", payload: "" });
     dispatch({ type: "set direction", payload: "buy" });
-    // TODO: check if user has enough tokens to sell; otherwise app crashes
-    const quote = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    dispatch({ type: "set quote", payload: quote });
+
+    const data = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
+    const dataOrError = validateResponseData<Quote>(data);
+
+    if ("msg" in dataOrError) {
+      dispatch({ type: "error", payload: dataOrError });
+    } else {
+      dispatch({ type: "set quote", payload: dataOrError as Quote });
+    }
+    
   } else {
     const params = {
       sellToken: e.target.value,
@@ -65,8 +64,13 @@ export async function onSellTokenSelect(
       takerAddress: getTakerAddress(state),
     };
     dispatch({ type: "fetching quote", payload: true });
-    const quote = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    dispatch({ type: "set quote", payload: quote });
+    const data = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
+    const dataOrError = validateResponseData<Quote>(data);
+    if ("msg" in dataOrError) {
+      dispatch({ type: "error", payload: dataOrError });
+    } else {
+      dispatch({ type: "set quote", payload: dataOrError as Quote });
+    }
   }
 }
 
@@ -91,8 +95,9 @@ export async function onBuyTokenSelect(
     dispatch({ type: "set sell amount", payload: state.buyAmount });
     dispatch({ type: "set buy amount", payload: "" });
     dispatch({ type: "set direction", payload: "sell" });
-    const quote = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    dispatch({ type: "set quote", payload: quote });
+    const data = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
+    const dataOrError = validateResponseData<Quote>(data);
+    dispatch({ type: "set quote", payload: dataOrError as Quote });
   } else {
     const params = {
       sellToken: state.sellToken,
@@ -104,16 +109,52 @@ export async function onBuyTokenSelect(
       takerAddress: getTakerAddress(state),
     };
     dispatch({ type: "fetching quote", payload: true });
-    const quote = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    dispatch({ type: "set quote", payload: quote });
+    const data = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
+    const dataOrError = validateResponseData<Quote>(data);
+    dispatch({ type: "set quote", payload: dataOrError as Quote });
+  }
+}
+
+async function checkAllowance({
+  state,
+  dispatch,
+  signer,
+  contractAddress,
+}: {
+  state: IReducerState;
+  dispatch: Dispatch<ActionTypes>;
+  signer: Signer;
+  contractAddress?: string;
+}) {
+  if (contractAddress && state.account) {
+    console.log(`checking allowance for ${state.sellToken}`);
+    const erc20 = new Contract(contractAddress, erc20ABI, signer);
+    const allowance = await erc20.allowance(state.account, ZERO_EX_PROXY);
+
+    if (allowance["_hex"] === "0x00") {
+      dispatch({ type: "set approval required", payload: true });
+    } else {
+      dispatch({ type: "set approval required", payload: false });
+    }
   }
 }
 
 export async function onDirectionChange(
   state: IReducerState,
-  dispatch: Dispatch<ActionTypes>
+  dispatch: Dispatch<ActionTypes>,
+  signer?: Signer
 ) {
+  const contractAddress = TOKENS[state.buyToken].address;
+  const takerAddress = getTakerAddress(state);
   if (state.direction === "sell") {
+    signer &&
+      checkAllowance({
+        state,
+        dispatch,
+        signer,
+        contractAddress,
+      });
+
     const params = {
       sellToken: state.buyToken,
       buyToken: state.sellToken,
@@ -121,31 +162,39 @@ export async function onDirectionChange(
         state.sellAmount || "0",
         TOKENS[state.sellToken].decimal
       ).toString(),
-      takerAddress: getTakerAddress(state),
+      ...(takerAddress ? { takerAddress } : {}),
     };
 
     const endpoint = ENDPOINTS[CHAIN_IDS[state.network]];
     dispatch({ type: "fetching quote", payload: true });
     const response = await fetch(
-      `${endpoint}/swap/v1/quote?${qs.stringify(params)}`
+      `${endpoint}/swap/v1/price?${qs.stringify(params)}`
     );
-    const data: Quote | ZeroExServerError = await response.json();
-    const dataOrError = validateResponseData(data);
+    const data = await response.json();
+    const dataOrError = validateResponseData<Price>(data);
     if ("msg" in dataOrError) {
       dispatch({ type: "error", payload: dataOrError });
     } else {
-      dispatch({ type: "set quote", payload: data as Quote });
+      dispatch({ type: "set price", payload: data as Price });
       dispatch({
         type: "set sell amount",
         payload: Number(
           formatUnits(
-            (data as Quote).sellAmount,
+            (dataOrError as Price).sellAmount,
             TOKENS[state.buyToken].decimal
           )
         ).toFixed(6),
       });
     }
   } else {
+    signer &&
+      checkAllowance({
+        state,
+        dispatch,
+        signer,
+        contractAddress,
+      });
+
     const params = {
       sellToken: state.buyToken,
       buyToken: state.sellToken,
@@ -153,26 +202,26 @@ export async function onDirectionChange(
         state.buyAmount || "0",
         TOKENS[state.buyToken].decimal
       ).toString(),
-      takerAddress: getTakerAddress(state),
+      ...(takerAddress ? { takerAddress } : {}),
     };
 
     const endpoint = ENDPOINTS[CHAIN_IDS[state.network]];
-    dispatch({ type: "fetching quote", payload: true });
+    dispatch({ type: "fetching price", payload: true });
     const response = await fetch(
-      `${endpoint}/swap/v1/quote?${qs.stringify(params)}`
+      `${endpoint}/swap/v1/price?${qs.stringify(params)}`
     );
-    const data: Quote | ZeroExServerError = await response.json();
-    const dataOrError = validateResponseData(data);
+    const data = await response.json();
+    const dataOrError = validateResponseData<Price>(data);
 
     if ("msg" in dataOrError) {
       dispatch({ type: "error", payload: dataOrError });
     } else {
-      dispatch({ type: "set quote", payload: data as Quote });
+      dispatch({ type: "set price", payload: dataOrError as Price });
       dispatch({
         type: "set buy amount",
         payload: Number(
           formatUnits(
-            (data as Quote).buyAmount,
+            (data as Price).buyAmount,
             TOKENS[state.sellToken].decimal
           )
         ).toFixed(6),
@@ -185,12 +234,12 @@ export function onSellAmountChange({
   e,
   state,
   dispatch,
-  fetchQuote,
+  fetchPrice,
 }: {
   e: ChangeEvent<HTMLInputElement>;
   state: IReducerState;
   dispatch: Dispatch<ActionTypes>;
-  fetchQuote?: DebouncedFetch;
+  fetchPrice?: DebouncedFetch;
 }) {
   if (e.target.validity.valid) {
     dispatch({ type: "set sell amount", payload: e.target.value });
@@ -203,11 +252,16 @@ export function onSellAmountChange({
       const decimal = TOKENS[sellToken].decimal;
       const sellAmount = parseUnits(value, decimal).toString();
       const takerAddress = getTakerAddress(state);
-      const params = { sellToken, buyToken, sellAmount, takerAddress };
+      const params = {
+        sellToken,
+        buyToken,
+        sellAmount,
+        ...(takerAddress ? { takerAddress } : {}),
+      };
 
-      if (fetchQuote) {
-        dispatch({ type: "fetching quote", payload: true });
-        fetchQuote(params, network);
+      if (fetchPrice) {
+        dispatch({ type: "fetching price", payload: true });
+        fetchPrice(params, network);
       }
     }
   }
@@ -217,12 +271,12 @@ export function onBuyAmountChange({
   e,
   state,
   dispatch,
-  fetchQuote,
+  fetchPrice,
 }: {
   e: ChangeEvent<HTMLInputElement>;
   state: IReducerState;
   dispatch: Dispatch<ActionTypes>;
-  fetchQuote?: DebouncedFetch;
+  fetchPrice?: DebouncedFetch;
 }) {
   if (e.target.validity.valid) {
     dispatch({ type: "set buy amount", payload: e.target.value });
@@ -237,33 +291,65 @@ export function onBuyAmountChange({
       const takerAddress = getTakerAddress(state);
       const params = { sellToken, buyToken, buyAmount, takerAddress };
 
-      if (fetchQuote) {
+      if (fetchPrice) {
         dispatch({ type: "fetching quote", payload: true });
-        fetchQuote(params, network);
+        fetchPrice(params, network);
       }
     }
   }
 }
 
-export async function placeOrder({
-  signer,
-  sendTransaction,
-  sellTokenAddress,
+export async function onFetchQuote({
+  state,
+  dispatch,
 }: {
-  signer?: FetchSignerResult;
-  sendTransaction?: SendTransactionFn;
-  sellTokenAddress?: string;
+  state: IReducerState;
+  dispatch: Dispatch<ActionTypes>;
 }) {
-  const owner = await signer?.getAddress();
+  const { buyToken, sellToken } = state;
+  const takerAddress = getTakerAddress(state);
 
-  if (sellTokenAddress && signer) {
-    const erc20 = new Contract(sellTokenAddress, ERC20_ABI, signer);
-    const allowance = await erc20.allowance(owner, ZERO_EX_PROXY);
+  if (fetchQuote) {
+    dispatch({ type: "fetching quote", payload: true });
+    let params: ZeroExApiRequestParams = { buyToken, sellToken };
 
-    if (allowance.toString() === "0") {
-      await erc20.approve(ZERO_EX_PROXY, MaxInt256);
+    if (state.direction === "buy") {
+      params = {
+        sellToken,
+        buyToken,
+        buyAmount: parseUnits(
+          state.buyAmount || "",
+          TOKENS[state.buyToken].decimal
+        ).toString(),
+        takerAddress,
+      };
+    } else {
+      params = {
+        sellToken,
+        buyToken,
+        sellAmount: parseUnits(
+          state.sellAmount || "",
+          TOKENS[state.sellToken].decimal
+        ).toString(),
+        takerAddress,
+      };
+    }
+    const data = await fetchQuote(
+      ENDPOINTS[CHAIN_IDS[state.network]],
+      params
+    );
+    const dataOrError = validateResponseData(data);
+
+    if ("msg" in dataOrError) {
+      dispatch({ type: "error", payload: dataOrError });
+    } else {
+      dispatch({ type: "set quote", payload: data as Quote });
+      dispatch({ type: "set finalize order" });
     }
 
-    sendTransaction && sendTransaction();
+    dispatch({ type: "fetching quote", payload: false });
+    dispatch({ type: "fetching price", payload: false });
+
+    return data;
   }
 }

@@ -1,15 +1,40 @@
 import qs from "qs";
 import type {
-  Quote,
+  Price,
   ZeroExServerError,
   ZeroExApiRequestParams,
-} from "~/hooks/useFetchDebounceQuote";
+} from "~/hooks/useFetchDebouncePrice";
+
+export interface Quote {
+  chainId: number;
+  price: string;
+  guaranteedPrice: string;
+  estimatedPriceImpact: string;
+  to: string;
+  data: string;
+  value: string;
+  gas: string;
+  estimatedGas: string;
+  gasPrice: string;
+  protocolFee: string;
+  minimumProtocolFee: string;
+  buyTokenAddress: string;
+  sellTokenAddress: string;
+  buyAmount: string;
+  sellAmount: string;
+  sources: any[];
+  orders: any[];
+  allowanceTarget: string;
+  decodedUniqueId: string;
+  sellTokenToEthRate: string;
+  buyTokenToEthRate: string;
+  expectedSlippage: string | null;
+}
 
 export async function fetchQuote(
   endpoint: string,
   params: ZeroExApiRequestParams
-) {
-  console.log("heyo!");
+): Promise<Quote | ZeroExServerError> {
   validateRequestParams(params);
 
   const response = await fetch(
@@ -48,9 +73,15 @@ export interface ZeroExClientError extends ZeroExServerError {
   msg?: string;
 }
 
-export const validateResponseData = (
-  data: Quote | ZeroExServerError
-): Quote | ZeroExClientError => {
+/**
+ * Validates the response data from 0x API. If error, attempts to normalize error data
+ * because 0x API returns inconsistent error objects.
+ * @param data
+ * @returns The 0x API response data which can be price & quote data or error data
+ */
+export const validateResponseData = <T extends object>(
+  data: T | ZeroExServerError
+): T | ZeroExClientError => {
   let error: ZeroExClientError | undefined;
 
   if ("reason" in data) {

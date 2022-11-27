@@ -17,12 +17,12 @@ const getPreferredTheme = () =>
   window.matchMedia(prefersDarkMQ).matches ? Theme.DARK : Theme.LIGHT;
 
 /**
- * Add script tag to the head of the HTML that runs this. The script tag is blocking, 
- * so it will run before the rest of the body is rendered. This ensure the initial, 
+ * Add script tag to the head of the HTML that runs this. The script tag is blocking,
+ * so it will run before the rest of the body is rendered. This ensure the initial,
  * pre-hydration state matches our post-hydration state.
  * See: https://www.mattstobbs.com/remix-dark-mode
  */
-  
+
 const clientThemeCode = `
 ;(() => {
   const theme = window.matchMedia(${JSON.stringify(prefersDarkMQ)}).matches

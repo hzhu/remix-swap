@@ -1,6 +1,6 @@
 import { json } from "@remix-run/node";
 import { getSession } from "~/session.server";
-import { validateLanguage } from '~/translations.server'
+import { validateLanguage } from "~/translations.server";
 import type { ActionFunction } from "@remix-run/node";
 
 export const action: ActionFunction = async ({ request }) => {

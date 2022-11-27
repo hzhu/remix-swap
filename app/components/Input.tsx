@@ -32,23 +32,20 @@ export const Input = forwardRef<
 
 Input.displayName = "Input";
 
-export const InputWithAccount = forwardRef<HTMLInputElement, InputWithAccountProps>(
-  ({ contractAddress, address, ...props }, ref) => {
-    const { data: balance } = useContractRead({
-      address: contractAddress,
-      functionName: "balanceOf",
-      args: [address],
-      abi: erc20ABI,
-    });
+export const InputWithAccount = forwardRef<
+  HTMLInputElement,
+  InputWithAccountProps
+>(({ contractAddress, address, ...props }, ref) => {
+  const { data: balance } = useContractRead({
+    address: contractAddress,
+    functionName: "balanceOf",
+    args: [address],
+    abi: erc20ABI,
+  });
 
-    return (
-      <Input
-        ref={ref}
-        disabled={balance?.toHexString() === "0x00"}
-        {...props}
-      />
-    );
-  }
-);
+  return (
+    <Input ref={ref} disabled={balance?.toHexString() === "0x00"} {...props} />
+  );
+});
 
 InputWithAccount.displayName = "InputWithAccount";

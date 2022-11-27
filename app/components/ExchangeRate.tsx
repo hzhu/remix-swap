@@ -1,30 +1,29 @@
 import { formatUnits } from "@ethersproject/units";
 import { TOKENS } from "~/constants";
 import type { FC } from "react";
-import type { Quote } from "~/hooks/useFetchDebounceQuote";
 
 interface ExchangeRateProps {
-  quote?: Quote;
+  sellAmount: string;
+  buyAmount: string;
   sellToken: string;
   buyToken: string;
 }
 
 export const ExchangeRate: FC<ExchangeRateProps> = ({
-  quote,
   sellToken,
   buyToken,
+  sellAmount,
+  buyAmount,
 }) => {
-  if (quote === undefined) return null;
-
-  const buyAmount = parseFloat(
-    formatUnits(quote.buyAmount, TOKENS[buyToken].decimal)
+  const buyAmountInt = parseFloat(
+    formatUnits(buyAmount, TOKENS[buyToken].decimal)
   );
 
-  const sellAmount = parseFloat(
-    formatUnits(quote.sellAmount, TOKENS[sellToken].decimal)
+  const sellAmountInt = parseFloat(
+    formatUnits(sellAmount, TOKENS[sellToken].decimal)
   );
 
-  let buyTokenRate = sellAmount / buyAmount;
+  let buyTokenRate = sellAmountInt / buyAmountInt;
 
   buyTokenRate = parseFloat(buyTokenRate.toFixed(buyTokenRate < 1 ? 6 : 2));
 

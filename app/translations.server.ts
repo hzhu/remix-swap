@@ -86,6 +86,60 @@ const swap = {
     fr: "Acheter",
     ko: "구입하다",
   },
+  Approve: {
+    en: "Approve",
+    es: "Aprobar",
+    fr: "Approuver",
+    ko: "승인하다",
+  },
+  Submitting: {
+    en: "Submitting",
+    es: "Enviando",
+    fr: "Envoi en cours",
+    ko: "제출 중",
+  },
+  Approving: {
+    en: "Approving",
+    es: "Aprobando",
+    fr: "Approuvant",
+    ko: "승인",
+  },
+  Max: {
+    en: "max",
+    es: "máx",
+    fr: "max",
+    ko: "최대",
+  },
+  Balance: {
+    en: "Balance",
+    es: "Balance",
+    fr: "Solde",
+    ko: "균형",
+  },
+  Back: {
+    en: "Back",
+    es: "Atrás",
+    fr: "Retour",
+    ko: "뒤",
+  },
+  "You pay": {
+    en: "You pay",
+    es: "Tu pagas",
+    fr: "Tu payes",
+    ko: "당신은 지불",
+  },
+  "You receive": {
+    en: "You receive",
+    es: "Usted recibe",
+    fr: "Vous recevez",
+    ko: "당신은 수신",
+  },
+  "Submit Order": {
+    en: "Submit Order",
+    es: "Orden de envio",
+    fr: "Soumettre la commande",
+    ko: "주문을 제출",
+  },
   "Sell Amount": {
     en: "Sell Amount",
     es: "Cantidad de venta",
@@ -103,6 +157,12 @@ const swap = {
     es: "Realizar Pedido",
     fr: "Passer la commande",
     ko: "주문하기",
+  },
+  "Review Order": {
+    en: "Review Order",
+    es: "Orden de revisión",
+    fr: "Réviser la commande",
+    ko: "주문 검토",
   },
   Processing: {
     en: "Processing",
@@ -134,6 +194,12 @@ export type ZeroExApiErrorMessages = keyof typeof apiErrors
 
 // https://docs.0x.org/0x-api-swap/api-references#errors
 export const apiErrors = {
+  "Validation Failed": {
+    en: "Error [[code]]: Validation Failed",
+    es: "Error [[code]]: Validación fallida",
+    fr: "Erreur [[code]]: Validation échouée",
+    ko: "오류 [[code]]: 검증에 실패했습니다",
+  },
   "Gas estimation failed": {
     en: "Error [[code]]: gas estimation failed",
     es: "Error [[code]]: estimación de gas fallida",
