@@ -54,7 +54,7 @@ const initialState: IReducerState = {
   approvalRequired: false,
 };
 
-const supportedTokens = new Set(["weth", "usdc", "dai", "matic"]);
+const supportedTokens = new Set(["usdc", "dai", "matic", "weth", "wbtc"]);
 
 export const getInitialState = (
   searchParams: URLSearchParams

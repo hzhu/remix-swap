@@ -6,7 +6,7 @@ export const CHAIN_IDS: Record<string, number> = {
   ethereum: 1,
   polygon: 142,
   ropsten: 3,
-  hardhat: 31337
+  hardhat: 31337,
 };
 
 // https://docs.0x.org/0x-api-swap/api-references
@@ -14,7 +14,7 @@ export const ENDPOINTS: Record<number, string> = {
   1: "https://api.0x.org",
   142: "https://polygon.api.0x.org",
   3: "https://ropsten.api.0x.org",
-  31337: "https://api.0x.org" // hardhat mainnet fork
+  31337: "https://api.0x.org", // hardhat mainnet fork
 };
 
 interface ITokenDetail {
@@ -52,7 +52,11 @@ export const TOKENS: Record<string, ITokenDetail> = {
     chainId: 1,
     address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
   },
-  wbtc: { decimal: 8 },
+  wbtc: {
+    decimal: 8,
+    chainId: 1,
+    address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  },
   weth: {
     decimal: 18,
     chainId: 1,
