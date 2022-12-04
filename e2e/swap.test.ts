@@ -95,6 +95,7 @@ describe("swap", () => {
     const docElement = await getDocument(testPage);
     const sellAmountInput = await getByLabelText(docElement, /Sell Amount/i);
     await sellAmountInput.type("1");
+    console.log('Typed in sell amount of 1…');
     await testPage.waitForFunction(() => {
       const [btn] = [...document.getElementsByTagName("button")].filter(
         (node) => node.innerText === "Approve"
@@ -102,9 +103,14 @@ describe("swap", () => {
       return btn;
     });
     await pause(0.5);
+    console.log('Price fetched & ready for approval…');
     const approveERC20Spend = await getByText(docElement, /Approve/i);
+    console.log('Approving…');
     await approveERC20Spend.press("Enter");
+    console.log('Confirming…');
     await metamask.confirmTransaction();
+    await pause(5);
+    console.log('Approval confirmed…');
     await testPage.bringToFront();
     await testPage.waitForFunction(() => {
       const [btn] = [...document.getElementsByTagName("button")].filter(
@@ -113,6 +119,7 @@ describe("swap", () => {
       return btn;
     });
     const reviewOrder = await getByText(docElement, /Review Order/i);
+    console.log('Ready to review…');
     await reviewOrder.press("Enter");
     await testPage.waitForFunction(() => {
       const [btn] = [...document.getElementsByTagName("button")].filter(
@@ -121,9 +128,13 @@ describe("swap", () => {
       return btn;
     });
     const submitOrder = await getByText(docElement, /Submit Order/i);
+    console.log('Ready to submit order…');
     await submitOrder.press("Enter");
+    console.log('Submitting order…');
     await pause(5);
+    console.log('Confirming transaction…');
     await metamask.confirmTransaction();
+    console.log('Transaction confirmed…');
     await testPage.bringToFront();
     await testPage.waitForXPath('//div[contains(text(), "Confirmed")]');
   });

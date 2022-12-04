@@ -22,5 +22,6 @@ jobs:
           RPC_TEST_URL: ${{ secrets.RPC_TEST_URL }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         with:
           run: npm run test:e2e
