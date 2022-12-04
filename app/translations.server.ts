@@ -194,6 +194,12 @@ export type ZeroExApiErrorMessages = keyof typeof apiErrors
 
 // https://docs.0x.org/0x-api-swap/api-references#errors
 export const apiErrors = {
+  "INSUFFICIENT_ASSET_LIQUIDITY": {
+    en: "Error [[code]]: Validation Failed",
+    es: "Error [[code]]: Validación fallida",
+    fr: "Erreur [[code]]: Validation échouée",
+    ko: "오류 [[code]]: 검증에 실패했습니다",
+  },
   "Validation Failed": {
     en: "Error [[code]]: Validation Failed",
     es: "Error [[code]]: Validación fallida",

@@ -29,7 +29,6 @@ import {
   ExchangeRate,
   CustomConnect,
   DirectionButton,
-  InputWithAccount,
 } from "~/components";
 
 import type { Dispatch } from "react";
@@ -84,6 +83,8 @@ export function PriceReview({
       }
     },
   });
+
+  console.log(state.error)
 
   const errorMessage = state.error
     ? translations[state.error.msg as ZeroExApiErrorMessages]

@@ -27,10 +27,18 @@ export interface Price {
   expectedSlippage: string | null;
 }
 
+interface ValidationError {
+  field: string;
+  code: number;
+  reason: string;
+  description: string;
+}
+
 export interface ZeroExServerError {
   code: number;
   reason: string;
   values?: { message: string };
+  validationErrors: ValidationError[];
 }
 
 export type SuccessFn = (data: Price | ZeroExServerError) => void;

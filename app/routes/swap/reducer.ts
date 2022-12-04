@@ -49,7 +49,20 @@ const initialState: IReducerState = {
   direction: "sell",
   fetching: false,
   account: undefined,
-  error: undefined,
+  error: {
+    code: 100,
+    reason: "Validation Failed",
+    validationErrors: [
+      {
+        field: "buyAmount",
+        code: 1004,
+        reason: "INSUFFICIENT_ASSET_LIQUIDITY",
+        description:
+          "We are not able to fulfill an order for this token pair at the requested amount due to a lack of liquidity",
+      },
+    ],
+    msg: "Validation Failed",
+  },
   finalize: false,
   approvalRequired: false,
   price: undefined,
