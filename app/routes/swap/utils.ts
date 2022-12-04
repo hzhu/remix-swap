@@ -31,6 +31,21 @@ export interface Quote {
   expectedSlippage: string | null;
 }
 
+export async function fetchPrice(
+  endpoint: string,
+  params: ZeroExApiRequestParams
+): Promise<Price | ZeroExServerError> {
+  validateRequestParams(params);
+
+  const response = await fetch(
+    `${endpoint}/swap/v1/price?${qs.stringify(params)}`
+  );
+
+  const data = await response.json();
+
+  return data;
+}
+
 export async function fetchQuote(
   endpoint: string,
   params: ZeroExApiRequestParams
@@ -40,6 +55,7 @@ export async function fetchQuote(
   const response = await fetch(
     `${endpoint}/swap/v1/quote?${qs.stringify(params)}`
   );
+  
   const data = await response.json();
 
   return data;

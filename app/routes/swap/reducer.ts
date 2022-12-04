@@ -11,7 +11,7 @@ export interface IReducerState {
   price?: Price;
   finalize: boolean;
   network: string;
-  account?: string;
+  account?: `0x${string}`;
   sellToken: string;
   buyToken: string;
   sellAmount?: string;
@@ -32,10 +32,10 @@ export type ActionTypes =
   | { type: "fetching quote"; payload: boolean }
   | { type: "fetching price"; payload: boolean }
   | { type: "set finalize order" }
-  | { type: "set account"; payload: string }
+  | { type: "set account"; payload: `0x${string}` }
   | { type: "set approval required"; payload: boolean }
-  | { type: "set quote"; payload: Quote }
-  | { type: "set price"; payload: Price }
+  | { type: "set quote"; payload: Quote | undefined }
+  | { type: "set price"; payload: Price | undefined }
   | { type: "set sell amount"; payload?: string }
   | { type: "set buy amount"; payload?: string }
   | { type: "error"; payload?: ZeroExClientError };
@@ -48,10 +48,12 @@ const initialState: IReducerState = {
   buyAmount: "",
   direction: "sell",
   fetching: false,
-  account: "",
+  account: undefined,
   error: undefined,
   finalize: false,
   approvalRequired: false,
+  price: undefined,
+  quote: undefined,
 };
 
 const supportedTokens = new Set(["usdc", "dai", "matic", "weth", "wbtc"]);
@@ -137,6 +139,9 @@ export const reducer = (
         };
       }
     case "set quote":
+      if (action.payload === undefined) {
+        return { ...state, quote: undefined };
+      }
       if (state.direction === "buy") {
         return {
           ...state,
@@ -161,6 +166,9 @@ export const reducer = (
         error: undefined,
       };
     case "set price":
+      if (action.payload === undefined) {
+        return { ...state, price: undefined };
+      }
       if (state.direction === "buy") {
         return {
           ...state,

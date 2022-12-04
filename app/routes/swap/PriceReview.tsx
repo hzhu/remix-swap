@@ -79,21 +79,9 @@ export function PriceReview({
     onSuccess: (data) => {
       if (data["_hex"] === "0x00") {
         dispatch({ type: "set approval required", payload: true });
+      } else {
+        dispatch({ type: "set approval required", payload: false });
       }
-    },
-  });
-
-  const { config } = usePrepareContractWrite({
-    address: TOKENS[state.sellToken].address,
-    abi: erc20ABI,
-    functionName: "approve",
-    args: [ZERO_EX_PROXY, MaxInt256],
-  });
-
-  const { write, isLoading: isApproving } = useContractWrite({
-    ...config,
-    onSuccess() {
-      dispatch({ type: "set approval required", payload: false });
     },
   });
 
@@ -117,62 +105,58 @@ export function PriceReview({
             TOKENS[state.sellToken].address
           }/logo.png`}
         />
-        <select
-          name="sell"
-          id="sell-select"
-          value={state.sellToken}
-          className={clsx(selectStyles, "mr-2", "w-50", "sm:w-full", "h-9")}
-          onChange={(e) => {
-            onSellTokenSelect(e, state, dispatch);
-            if (e.target.value === state.buyToken) {
-              setSearchParams({
-                ...Object.fromEntries(searchParams),
-                sell: state.buyToken,
-                buy: state.sellToken,
-              });
-            } else {
-              setSearchParams({
-                ...Object.fromEntries(searchParams),
-                sell: e.target.value,
-              });
-            }
-          }}
-        >
-          {/* <option value="">--Choose a token--</option> */}
-          <option value="usdc">USDC</option>
-          <option value="dai">DAI</option>
-          <option value="matic">MATIC</option>
-          <option value="weth">WETH</option>
-          <option value="wbtc">WBTC</option>
-        </select>
+        <div className="h-14 sm:w-full sm:mr-2">
+          <select
+            name="sell"
+            id="sell-select"
+            value={state.sellToken}
+            className={clsx(selectStyles, "mr-2", "w-50", "sm:w-full", "h-9")}
+            onChange={(e) => {
+              onSellTokenSelect(e, state, dispatch);
+              if (e.target.value === state.buyToken) {
+                setSearchParams({
+                  ...Object.fromEntries(searchParams),
+                  sell: state.buyToken,
+                  buy: state.sellToken,
+                });
+              } else {
+                setSearchParams({
+                  ...Object.fromEntries(searchParams),
+                  sell: e.target.value,
+                });
+              }
+            }}
+          >
+            {/* <option value="">--Choose a token--</option> */}
+            <option value="usdc">USDC</option>
+            <option value="dai">DAI</option>
+            <option value="matic">MATIC</option>
+            <option value="weth">WETH</option>
+            <option value="wbtc">WBTC</option>
+          </select>
+          {address ? (
+            <Max
+              state={state}
+              dispatch={dispatch}
+              address={address}
+              fetchPrice={fetchPrice}
+              translations={translations}
+            />
+          ) : null}
+        </div>
         <label htmlFor="sell-amount" className="sr-only">
           {translations["Sell Amount"]}
         </label>
         <div className="w-full">
           {address ? (
-            <>
-              <InputWithAccount
-                id="sell-amount"
-                address={address}
-                value={state.sellAmount || ""}
-                className={clsx(selectStyles, "h-9", "pl-2")}
-                contractAddress={TOKENS[state.sellToken].address}
-                onChange={(e) =>
-                  onSellAmountChange({ e, state, dispatch, fetchPrice })
-                }
-              />
-              <div className="flex items-center text-xs">
-                <div className="mr-1">{translations["Balance"]}:</div>
-                <Max
-                  state={state}
-                  dispatch={dispatch}
-                  address={address}
-                  fetchPrice={fetchPrice}
-                >
-                  ({translations["Max"]})
-                </Max>
-              </div>
-            </>
+            <Input
+              id="sell-amount"
+              value={state.sellAmount || ""}
+              className={clsx(selectStyles, "h-9", "pl-2")}
+              onChange={(e) =>
+                onSellAmountChange({ e, state, dispatch, fetchPrice })
+              }
+            />
           ) : (
             <Input
               id="sell-amount"
@@ -185,7 +169,7 @@ export function PriceReview({
           )}
         </div>
       </div>
-      <div className="mt-4 flex justify-center">
+      <div className="flex justify-center mt-4 mb-8">
         <DirectionButton
           type="button"
           aria-label={translations["switch trading direction"]}
@@ -290,42 +274,81 @@ export function PriceReview({
           />
         ) : null}
       </div>
-      {isConnected ? (
-        state.approvalRequired && state.price ? (
-          <button
-            type="button"
-            onClick={() => write && write()}
-            className={clsx(
-              primaryButton.element,
-              !(state.fetching || state.quote === undefined)
-                ? primaryButton.pseudo
-                : "",
-              "py-1 px-2 w-full"
-            )}
-          >
-            {isApproving
-              ? `${translations["Approving"]}…`
-              : translations["Approve"]}
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={state.fetching || state.price === undefined}
-            onClick={() => onFetchQuote({ state, dispatch })}
-            className={clsx(
-              primaryButton.element,
-              !(state.fetching || state.quote === undefined)
-                ? primaryButton.pseudo
-                : "",
-              "py-1 px-2 w-full h-8"
-            )}
-          >
-            {translations["Review Order"]}
-          </button>
-        )
+      {isConnected && state.account ? (
+        <Submit state={state} dispatch={dispatch} translations={translations} />
       ) : (
         <CustomConnect label={translations["Connect Wallet"]} />
       )}
     </form>
+  );
+}
+
+function Submit({
+  state,
+  dispatch,
+  translations,
+}: {
+  state: IReducerState;
+  dispatch: Dispatch<ActionTypes>;
+  translations: SwapTranslations;
+}) {
+  const { data: balance } = useContractRead({
+    address: TOKENS[state.sellToken].address,
+    functionName: "balanceOf",
+    args: [state.account!],
+    abi: erc20ABI,
+  });
+
+  const zeroBalance = balance ? balance["_hex"] === "0x00" : undefined;
+
+  const { config } = usePrepareContractWrite({
+    address: TOKENS[state.sellToken].address,
+    abi: erc20ABI,
+    functionName: "approve",
+    args: [ZERO_EX_PROXY, MaxInt256],
+  });
+
+  const { write, isLoading: isApproving } = useContractWrite({
+    ...config,
+    onSuccess() {
+      dispatch({ type: "set approval required", payload: false });
+    },
+  });
+
+  if (state.approvalRequired) {
+    return (
+      <button
+        type="button"
+        onClick={() => write && write()}
+        className={clsx(
+          primaryButton.element,
+          !(state.fetching || state.quote === undefined)
+            ? primaryButton.pseudo
+            : "",
+          "py-1 px-2 w-full"
+        )}
+      >
+        {isApproving
+          ? `${translations["Approving"]}…`
+          : translations["Approve"]}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={state.fetching || state.price === undefined || zeroBalance}
+      onClick={() => onFetchQuote({ state, dispatch })}
+      className={clsx(
+        primaryButton.element,
+        !(state.fetching || state.quote === undefined)
+          ? primaryButton.pseudo
+          : "",
+        "py-1 px-2 w-full h-8"
+      )}
+    >
+      {translations["Review Order"]}
+    </button>
   );
 }

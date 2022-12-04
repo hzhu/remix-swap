@@ -2,16 +2,17 @@ import { formatUnits } from "@ethersproject/units";
 import { erc20ABI, useContractRead } from "wagmi";
 import { TOKENS } from "~/constants";
 
-import type { Dispatch, ReactNode } from "react";
+import type { Dispatch } from "react";
 import type { DebouncedFetch } from "~/hooks/useFetchDebouncePrice";
 import type { ActionTypes, IReducerState } from "../routes/swap/reducer";
+import clsx from "clsx";
 
 interface MaxArgs {
   state: IReducerState;
   dispatch: Dispatch<ActionTypes>;
   address: `0x${string}`;
   fetchPrice?: DebouncedFetch;
-  children?: ReactNode;
+  translations?: any;
 }
 
 export function Max({
@@ -19,7 +20,7 @@ export function Max({
   dispatch,
   address,
   fetchPrice,
-  children,
+  translations,
 }: MaxArgs) {
   const { data: balance } = useContractRead({
     address: TOKENS[state.sellToken].address,
@@ -32,10 +33,15 @@ export function Max({
     ? formatUnits(balance.toString(), TOKENS[state.sellToken].decimal)
     : "";
 
-  const sellBalanceText = sellBalance
-    .split(".")
-    .map((s, i) => (i === 1 ? s.slice(0, 2) : s))
-    .join(".");
+  const sellBalanceText =
+    Number(sellBalance) > 1
+      ? sellBalance
+          .split(".")
+          .map((s, i) => (i === 1 ? s.slice(0, 2) : s))
+          .join(".")
+      : sellBalance;
+
+  const hasZeroBalance = sellBalanceText === "0.0";
 
   const onMaxSell = () => {
     dispatch({
@@ -56,7 +62,18 @@ export function Max({
   };
 
   return sellBalance ? (
-    <div className="flex">
+    <div
+      className={clsx(
+        hasZeroBalance && "text-red-600 dark:text-red-500",
+        "flex items-center text-xs mt-1"
+      )}
+    >
+      {hasZeroBalance ? (
+        <span role="img" aria-label="warning">
+          ⚠️
+        </span>
+      ) : null}
+      <div className="mx-1">{translations["Balance"]}:</div>
       <div className="text-xs mr-1">{sellBalanceText}</div>
       {sellBalance !== "0.0" ? (
         <button
@@ -64,7 +81,7 @@ export function Max({
           onClick={onMaxSell}
           className="text-xs italic hover:bg-blue-600 hover:underline hover:text-slate-50 active:underline active:text-slate-50"
         >
-          {children}
+          ({translations["Max"]})
         </button>
       ) : null}
     </div>

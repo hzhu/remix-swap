@@ -54,7 +54,11 @@ export function QuoteReview({
       ...config,
       onSettled: (_, error) => {
         if (error === null) {
-          dispatch({ type: "reset" });
+          dispatch({ type: "set sell amount", payload: "" });
+          dispatch({ type: "set buy amount", payload: "" });
+          dispatch({ type: "set quote", payload: undefined });
+          dispatch({ type: "set buy amount", payload: "" });
+          dispatch({ type: "set finalize order" });
           openAccountModal && openAccountModal();
         }
       },

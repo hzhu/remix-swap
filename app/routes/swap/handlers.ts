@@ -2,7 +2,7 @@ import qs from "qs";
 import { erc20ABI } from "wagmi";
 import { Contract } from "@ethersproject/contracts";
 import { formatUnits, parseUnits } from "@ethersproject/units";
-import { fetchQuote, validateResponseData } from "./utils";
+import { fetchQuote, fetchPrice, validateResponseData } from "./utils";
 import { TOKENS, ENDPOINTS, CHAIN_IDS, ZERO_EX_PROXY } from "~/constants";
 
 import type { Signer } from "@wagmi/core";
@@ -27,7 +27,7 @@ export async function onSellTokenSelect(
   dispatch: Dispatch<ActionTypes>
 ) {
   dispatch({ type: "choose sell token", payload: e.target.value });
-  
+
   if (state.sellAmount === "") return;
   if (e.target.value === state.buyToken) {
     const params = {
@@ -52,7 +52,6 @@ export async function onSellTokenSelect(
     } else {
       dispatch({ type: "set quote", payload: dataOrError as Quote });
     }
-    
   } else {
     const params = {
       sellToken: e.target.value,
@@ -91,27 +90,27 @@ export async function onBuyTokenSelect(
       ).toString(),
       takerAddress: getTakerAddress(state),
     };
-    dispatch({ type: "fetching quote", payload: true });
+    dispatch({ type: "fetching price", payload: true });
     dispatch({ type: "set sell amount", payload: state.buyAmount });
     dispatch({ type: "set buy amount", payload: "" });
     dispatch({ type: "set direction", payload: "sell" });
-    const data = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<Quote>(data);
-    dispatch({ type: "set quote", payload: dataOrError as Quote });
+    const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
+    const dataOrError = validateResponseData<Price>(data);
+    dispatch({ type: "set price", payload: dataOrError as Price });
   } else {
     const params = {
       sellToken: state.sellToken,
       buyToken: e.target.value,
-      buyAmount: parseUnits(
-        state.buyAmount || "0",
-        TOKENS[e.target.value].decimal
+      sellAmount: parseUnits(
+        state.sellAmount || "0",
+        TOKENS[state.sellToken].decimal
       ).toString(),
       takerAddress: getTakerAddress(state),
     };
-    dispatch({ type: "fetching quote", payload: true });
-    const data = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<Quote>(data);
-    dispatch({ type: "set quote", payload: dataOrError as Quote });
+    dispatch({ type: "fetching price", payload: true });
+    const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
+    const dataOrError = validateResponseData<Price>(data);
+    dispatch({ type: "set price", payload: dataOrError as Price });
   }
 }
 
@@ -127,7 +126,6 @@ async function checkAllowance({
   contractAddress?: string;
 }) {
   if (contractAddress && state.account) {
-    console.log(`checking allowance for ${state.sellToken}`);
     const erc20 = new Contract(contractAddress, erc20ABI, signer);
     const allowance = await erc20.allowance(state.account, ZERO_EX_PROXY);
 
@@ -334,15 +332,13 @@ export async function onFetchQuote({
         takerAddress,
       };
     }
-    const data = await fetchQuote(
-      ENDPOINTS[CHAIN_IDS[state.network]],
-      params
-    );
+    const data = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
     const dataOrError = validateResponseData(data);
 
     if ("msg" in dataOrError) {
       dispatch({ type: "error", payload: dataOrError });
     } else {
+      dispatch({ type: "set price", payload: undefined });
       dispatch({ type: "set quote", payload: data as Quote });
       dispatch({ type: "set finalize order" });
     }
