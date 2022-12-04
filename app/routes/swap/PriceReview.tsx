@@ -143,6 +143,7 @@ export function PriceReview({
           <option value="dai">DAI</option>
           <option value="matic">MATIC</option>
           <option value="weth">WETH</option>
+          <option value="wbtc">WBTC</option>
         </select>
         <label htmlFor="sell-amount" className="sr-only">
           {translations["Sell Amount"]}
@@ -241,6 +242,7 @@ export function PriceReview({
           <option value="dai">DAI</option>
           <option value="matic">MATIC</option>
           <option value="weth">WETH</option>
+          <option value="wbtc">WBTC</option>
         </select>
         <label htmlFor="buy-amount" className="sr-only">
           {translations["Buy Amount"]}
