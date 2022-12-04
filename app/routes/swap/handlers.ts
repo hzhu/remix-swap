@@ -20,15 +20,13 @@ const getTakerAddress = (state: IReducerState) => {
   return state.network === "hardhat" ? undefined : state.account;
 };
 
-// TODO: handle errors or app crash.
 export async function onSellTokenSelect(
   e: ChangeEvent<HTMLSelectElement>,
   state: IReducerState,
   dispatch: Dispatch<ActionTypes>
 ) {
   dispatch({ type: "choose sell token", payload: e.target.value });
-
-  if (state.sellAmount === "") return;
+  if (!state.buyAmount || !state.sellAmount) return;
   if (e.target.value === state.buyToken) {
     const params = {
       sellToken: e.target.value,
@@ -44,31 +42,41 @@ export async function onSellTokenSelect(
     dispatch({ type: "set sell amount", payload: "" });
     dispatch({ type: "set direction", payload: "buy" });
 
-    const data = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<Quote>(data);
-
+    const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
+    const dataOrError = validateResponseData<Price>(data);
     if ("msg" in dataOrError) {
       dispatch({ type: "error", payload: dataOrError });
     } else {
-      dispatch({ type: "set quote", payload: dataOrError as Quote });
+      dispatch({ type: "set price", payload: dataOrError as Price });
     }
   } else {
+    const amount: { buyAmount?: string; sellAmount?: string } = {};
+    if (state.direction === "sell") {
+      amount.sellAmount = parseUnits(
+        state.sellAmount,
+        TOKENS[e.target.value].decimal
+      ).toString();
+    } else {
+      amount.buyAmount = parseUnits(
+        state.buyAmount,
+        TOKENS[state.buyToken].decimal
+      ).toString();
+    }
+
     const params = {
       sellToken: e.target.value,
       buyToken: state.buyToken,
-      sellAmount: parseUnits(
-        state.sellAmount || "",
-        TOKENS[e.target.value].decimal
-      ).toString(),
       takerAddress: getTakerAddress(state),
+      ...amount,
     };
+
     dispatch({ type: "fetching quote", payload: true });
-    const data = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<Quote>(data);
+    const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
+    const dataOrError = validateResponseData<Price>(data);
     if ("msg" in dataOrError) {
       dispatch({ type: "error", payload: dataOrError });
     } else {
-      dispatch({ type: "set quote", payload: dataOrError as Quote });
+      dispatch({ type: "set price", payload: dataOrError as Price });
     }
   }
 }
@@ -79,7 +87,7 @@ export async function onBuyTokenSelect(
   dispatch: Dispatch<ActionTypes>
 ) {
   dispatch({ type: "choose buy token", payload: e.target.value });
-  if (state.buyAmount === "") return;
+  if (!state.buyAmount || !state.sellAmount) return;
   if (e.target.value === state.sellToken) {
     const params = {
       buyToken: e.target.value,
@@ -98,19 +106,34 @@ export async function onBuyTokenSelect(
     const dataOrError = validateResponseData<Price>(data);
     dispatch({ type: "set price", payload: dataOrError as Price });
   } else {
+    const amount: { buyAmount?: string; sellAmount?: string } = {};
+    if (state.direction === "sell") {
+      amount.sellAmount = parseUnits(
+        state.sellAmount,
+        TOKENS[state.sellToken].decimal
+      ).toString();
+    } else {
+      amount.buyAmount = parseUnits(
+        state.buyAmount,
+        TOKENS[e.target.value].decimal
+      ).toString();
+    }
+
     const params = {
       sellToken: state.sellToken,
       buyToken: e.target.value,
-      sellAmount: parseUnits(
-        state.sellAmount || "0",
-        TOKENS[state.sellToken].decimal
-      ).toString(),
       takerAddress: getTakerAddress(state),
+      ...amount,
     };
+
     dispatch({ type: "fetching price", payload: true });
     const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
     const dataOrError = validateResponseData<Price>(data);
-    dispatch({ type: "set price", payload: dataOrError as Price });
+    if ("msg" in dataOrError) {
+      dispatch({ type: "error", payload: dataOrError });
+    } else {
+      dispatch({ type: "set price", payload: dataOrError as Price });
+    }
   }
 }
 
