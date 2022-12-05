@@ -2,19 +2,15 @@ import qs from "qs";
 import { erc20ABI } from "wagmi";
 import { Contract } from "@ethersproject/contracts";
 import { formatUnits, parseUnits } from "@ethersproject/units";
-import { fetchQuote, fetchPrice, validateResponseData } from "./utils";
+import { fetchPrice, fetchQuote, validateResponseData } from "~/api";
 import { TOKENS, ENDPOINTS, CHAIN_IDS, ZERO_EX_PROXY } from "~/constants";
 
 import type { Signer } from "@wagmi/core";
 import type { Dispatch, ChangeEvent } from "react";
 import type { ActionTypes } from "./reducer";
 import type { IReducerState } from "./reducer";
-import type {
-  DebouncedFetch,
-  ZeroExApiRequestParams,
-} from "~/hooks/useFetchDebouncePrice";
-import type { Quote } from "~/routes/swap/utils";
-import type { Price } from "~/hooks/useFetchDebouncePrice";
+import type { DebouncedFetch } from "~/hooks/useFetchDebouncePrice";
+import type { QuoteRequest, PriceResponse, QuoteResponse } from "~/api/types";
 
 const getTakerAddress = (state: IReducerState) => {
   return state.network === "hardhat" ? undefined : state.account;
@@ -43,11 +39,11 @@ export async function onSellTokenSelect(
     dispatch({ type: "set direction", payload: "buy" });
 
     const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<Price>(data);
+    const dataOrError = validateResponseData<PriceResponse>(data);
     if ("msg" in dataOrError) {
       dispatch({ type: "error", payload: dataOrError });
     } else {
-      dispatch({ type: "set price", payload: dataOrError as Price });
+      dispatch({ type: "set price", payload: dataOrError as PriceResponse });
     }
   } else {
     const amount: { buyAmount?: string; sellAmount?: string } = {};
@@ -72,11 +68,11 @@ export async function onSellTokenSelect(
 
     dispatch({ type: "fetching quote", payload: true });
     const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<Price>(data);
+    const dataOrError = validateResponseData<PriceResponse>(data);
     if ("msg" in dataOrError) {
       dispatch({ type: "error", payload: dataOrError });
     } else {
-      dispatch({ type: "set price", payload: dataOrError as Price });
+      dispatch({ type: "set price", payload: dataOrError as PriceResponse });
     }
   }
 }
@@ -103,8 +99,8 @@ export async function onBuyTokenSelect(
     dispatch({ type: "set buy amount", payload: "" });
     dispatch({ type: "set direction", payload: "sell" });
     const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<Price>(data);
-    dispatch({ type: "set price", payload: dataOrError as Price });
+    const dataOrError = validateResponseData<PriceResponse>(data);
+    dispatch({ type: "set price", payload: dataOrError as PriceResponse });
   } else {
     const amount: { buyAmount?: string; sellAmount?: string } = {};
     if (state.direction === "sell") {
@@ -128,11 +124,11 @@ export async function onBuyTokenSelect(
 
     dispatch({ type: "fetching price", payload: true });
     const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<Price>(data);
+    const dataOrError = validateResponseData<PriceResponse>(data);
     if ("msg" in dataOrError) {
       dispatch({ type: "error", payload: dataOrError });
     } else {
-      dispatch({ type: "set price", payload: dataOrError as Price });
+      dispatch({ type: "set price", payload: dataOrError as PriceResponse });
     }
   }
 }
@@ -192,16 +188,16 @@ export async function onDirectionChange(
       `${endpoint}/swap/v1/price?${qs.stringify(params)}`
     );
     const data = await response.json();
-    const dataOrError = validateResponseData<Price>(data);
+    const dataOrError = validateResponseData<PriceResponse>(data);
     if ("msg" in dataOrError) {
       dispatch({ type: "error", payload: dataOrError });
     } else {
-      dispatch({ type: "set price", payload: data as Price });
+      dispatch({ type: "set price", payload: data as PriceResponse });
       dispatch({
         type: "set sell amount",
         payload: Number(
           formatUnits(
-            (dataOrError as Price).sellAmount,
+            (dataOrError as PriceResponse).sellAmount,
             TOKENS[state.buyToken].decimal
           )
         ).toFixed(6),
@@ -232,17 +228,17 @@ export async function onDirectionChange(
       `${endpoint}/swap/v1/price?${qs.stringify(params)}`
     );
     const data = await response.json();
-    const dataOrError = validateResponseData<Price>(data);
+    const dataOrError = validateResponseData<PriceResponse>(data);
 
     if ("msg" in dataOrError) {
       dispatch({ type: "error", payload: dataOrError });
     } else {
-      dispatch({ type: "set price", payload: dataOrError as Price });
+      dispatch({ type: "set price", payload: dataOrError as PriceResponse });
       dispatch({
         type: "set buy amount",
         payload: Number(
           formatUnits(
-            (data as Price).buyAmount,
+            (data as PriceResponse).buyAmount,
             TOKENS[state.sellToken].decimal
           )
         ).toFixed(6),
@@ -332,7 +328,7 @@ export async function onFetchQuote({
 
   if (fetchQuote) {
     dispatch({ type: "fetching quote", payload: true });
-    let params: ZeroExApiRequestParams = { buyToken, sellToken };
+    let params: QuoteRequest = { buyToken, sellToken };
 
     if (state.direction === "buy") {
       params = {
@@ -362,7 +358,7 @@ export async function onFetchQuote({
       dispatch({ type: "error", payload: dataOrError });
     } else {
       dispatch({ type: "set price", payload: undefined });
-      dispatch({ type: "set quote", payload: data as Quote });
+      dispatch({ type: "set quote", payload: data as QuoteResponse });
       dispatch({ type: "set finalize order" });
     }
 

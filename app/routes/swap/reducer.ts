@@ -1,14 +1,16 @@
 import { formatUnits } from "@ethersproject/units";
 import { TOKENS } from "~/constants";
-import type { Price } from "~/hooks/useFetchDebouncePrice";
-import type { Quote } from "~/routes/swap/utils";
-import type { ZeroExClientError } from "./utils";
+import type {
+  PriceResponse,
+  QuoteResponse,
+  ZeroExClientError,
+} from "~/api/types";
 
 type TradeDirection = "buy" | "sell";
 
 export interface IReducerState {
-  quote?: Quote;
-  price?: Price;
+  quote?: QuoteResponse;
+  price?: PriceResponse;
   finalize: boolean;
   network: string;
   account?: `0x${string}`;
@@ -34,8 +36,8 @@ export type ActionTypes =
   | { type: "set finalize order" }
   | { type: "set account"; payload: `0x${string}` }
   | { type: "set approval required"; payload: boolean }
-  | { type: "set quote"; payload: Quote | undefined }
-  | { type: "set price"; payload: Price | undefined }
+  | { type: "set quote"; payload: QuoteResponse | undefined }
+  | { type: "set price"; payload: PriceResponse | undefined }
   | { type: "set sell amount"; payload?: string }
   | { type: "set buy amount"; payload?: string }
   | { type: "error"; payload?: ZeroExClientError };

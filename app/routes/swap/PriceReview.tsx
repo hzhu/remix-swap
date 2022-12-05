@@ -11,7 +11,7 @@ import {
   usePrepareContractWrite,
 } from "wagmi";
 import { primaryButton } from "./index";
-import { validateResponseData } from "./utils";
+import { validateResponseData } from "~/api";
 import { useFetchDebouncePrice } from "~/hooks";
 import { TOKENS, ZERO_EX_PROXY } from "~/constants";
 import {
@@ -29,7 +29,6 @@ import {
   ExchangeRate,
   CustomConnect,
   DirectionButton,
-  InputWithAccount,
 } from "~/components";
 
 import type { Dispatch } from "react";
@@ -37,7 +36,7 @@ import type { Signer } from "@wagmi/core";
 import type { SuccessFn } from "~/hooks";
 import type { SwapTranslations } from "./index";
 import type { IReducerState, ActionTypes } from "./reducer";
-import type { Price } from "../../hooks/useFetchDebouncePrice";
+import type { PriceResponse } from "../../api/types";
 import type { ZeroExApiErrorMessages } from "../../translations.server";
 
 const selectStyles = `border rounded-md text-xl transition-[background] dark:transition-[background] duration-500 dark:duration-500 bg-slate-50 dark:text-slate-50 dark:bg-slate-900`;
@@ -63,7 +62,7 @@ export function PriceReview({
       if ("msg" in dataOrError) {
         dispatch({ type: "error", payload: dataOrError });
       } else {
-        dispatch({ type: "set price", payload: data as Price });
+        dispatch({ type: "set price", payload: data as PriceResponse });
       }
     },
     [dispatch]
@@ -85,11 +84,22 @@ export function PriceReview({
     },
   });
 
-  const errorMessage = state.error
+  let errorMessage = state.error
     ? translations[state.error.msg as ZeroExApiErrorMessages]
         .replace("[[token]]", state.sellToken.toUpperCase())
         .replace("[[code]]", state.error.code.toString())
     : "";
+
+  // Temporary insufficient liquidity error message
+  if (state.error?.validationErrors.length) {
+    const [firstValidationError] = state.error?.validationErrors;
+    const { reason, description } = firstValidationError;
+    if (reason === "INSUFFICIENT_ASSET_LIQUIDITY") {
+      errorMessage = `Insufficient liquidity to fulfill this order`;
+    } else {
+      errorMessage = description;
+    }
+  }
 
   return (
     <form>

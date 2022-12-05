@@ -4,49 +4,18 @@ import { useRef, useEffect } from "react";
 import { ENDPOINTS, CHAIN_IDS } from "~/constants";
 
 import type { DebouncedFunc } from "lodash";
+import type {
+  PriceRequest,
+  PriceResponse,
+  ZeroExServerError,
+} from "~/api/types";
 
-// https://docs.0x.org/0x-api-swap/api-references/get-swap-v1-price#response
-export interface Price {
-  chainId: number;
-  price: string;
-  estimatedPriceImpact: string;
-  value: string;
-  gasPrice: string;
-  gas: string;
-  estimatedGas: string;
-  protocolFee: string;
-  minimumProtocolFee: string;
-  buyTokenAddress: string;
-  buyAmount: string;
-  sellTokenAddress: string;
-  sellAmount: string;
-  sources: any[];
-  allowanceTarget: string;
-  sellTokenToEthRate: string;
-  buyTokenToEthRate: string;
-  expectedSlippage: string | null;
-}
-
-export interface ZeroExServerError {
-  code: number;
-  reason: string;
-  values?: { message: string };
-}
-
-export type SuccessFn = (data: Price | ZeroExServerError) => void;
+export type SuccessFn = (data: PriceResponse | ZeroExServerError) => void;
 
 export type ErrorFn = (error: unknown) => void;
 
-export interface ZeroExApiRequestParams {
-  sellToken: string;
-  buyToken: string;
-  sellAmount?: string;
-  buyAmount?: string;
-  takerAddress?: string;
-}
-
 export type DebouncedFetch = DebouncedFunc<
-  (params: ZeroExApiRequestParams, network: string) => Promise<void>
+  (params: PriceRequest, network: string) => Promise<void>
 >;
 
 export function useFetchDebouncePrice(
@@ -61,7 +30,7 @@ export function useFetchDebouncePrice(
       const URL = `${endpoint}/swap/v1/price?${qs.stringify(params)}`;
       try {
         const response = await fetch(URL);
-        const data: Price | ZeroExServerError = await response.json();
+        const data: PriceResponse | ZeroExServerError = await response.json();
         onSuccess && onSuccess(data);
       } catch (error) {
         onError && onError(error);
