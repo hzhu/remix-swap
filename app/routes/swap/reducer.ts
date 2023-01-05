@@ -1,10 +1,11 @@
 import { formatUnits } from "@ethersproject/units";
-import { TOKENS } from "~/constants";
+import { getTokenListBySymbol } from "~/constants";
 import type {
   PriceResponse,
   QuoteResponse,
   ZeroExClientError,
 } from "~/api/types";
+import type { Chain } from "wagmi";
 
 type TradeDirection = "buy" | "sell";
 
@@ -13,6 +14,7 @@ export interface IReducerState {
   price?: PriceResponse;
   finalize: boolean;
   network: string;
+  chainId: number | undefined;
   account?: `0x${string}`;
   sellToken: string;
   buyToken: string;
@@ -29,6 +31,7 @@ export type ActionTypes =
   | { type: "reverse trade direction" }
   | { type: "set direction"; payload: TradeDirection }
   | { type: "select network"; payload: string }
+  | { type: "select chain id"; payload: number }
   | { type: "choose sell token"; payload: string }
   | { type: "choose buy token"; payload: string }
   | { type: "fetching quote"; payload: boolean }
@@ -46,6 +49,7 @@ const initialState: IReducerState = {
   sellToken: "weth",
   buyToken: "dai",
   network: "ethereum",
+  chainId: 1,
   sellAmount: "",
   buyAmount: "",
   direction: "sell",
@@ -58,18 +62,26 @@ const initialState: IReducerState = {
   quote: undefined,
 };
 
-const supportedTokens = new Set(["usdc", "dai", "matic", "weth", "wbtc"]);
+const supportedTokens = new Set(["usdc", "dai", "matic", "weth", "wbtc", "uni"]);
+
+const initialPairByChainId: Record<string, string[]> = {
+  '1': ['weth', 'dai'],
+  '5': ['weth', 'uni']
+}
 
 export const getInitialState = (
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
+  chain?: Chain
 ): IReducerState => {
-  const sell = searchParams.get("sell") || initialState.sellToken;
-  const buy = searchParams.get("buy") || initialState.buyToken;
+  const [sellToken, buyToken] = initialPairByChainId[chain?.id || "1"]
+  const sell = searchParams.get("sell") || sellToken;
+  const buy = searchParams.get("buy") || buyToken;
 
   return {
     ...initialState,
-    sellToken: supportedTokens.has(sell) ? sell : initialState.sellToken,
-    buyToken: supportedTokens.has(buy) ? buy : initialState.buyToken,
+    chainId: chain?.id,
+    sellToken: supportedTokens.has(sell) ? sell : sellToken,
+    buyToken: supportedTokens.has(buy) ? buy : buyToken,
   };
 };
 
@@ -77,9 +89,12 @@ export const reducer = (
   state: IReducerState,
   action: ActionTypes
 ): IReducerState => {
+  const tokensBySymbol = getTokenListBySymbol(state.chainId || 1);
   switch (action.type) {
     case "select network":
       return { ...state, network: action.payload };
+    case "select chain id":
+      return { ...state, chainId: action.payload };
     case "choose sell token":
       if (state.buyToken === action.payload && state.sellToken === "") {
         return {
@@ -152,7 +167,7 @@ export const reducer = (
           sellAmount: Number(
             formatUnits(
               action.payload.sellAmount,
-              TOKENS[state.sellToken].decimal
+              tokensBySymbol[state.sellToken].decimals
             )
           ).toString(),
           error: undefined,
@@ -163,11 +178,12 @@ export const reducer = (
         fetching: false,
         quote: action.payload,
         buyAmount: Number(
-          formatUnits(action.payload.buyAmount, TOKENS[state.buyToken].decimal)
+          formatUnits(action.payload.buyAmount, tokensBySymbol[state.buyToken].decimals)
         ).toString(),
         error: undefined,
       };
     case "set price":
+      
       if (action.payload === undefined) {
         return { ...state, price: undefined };
       }
@@ -179,7 +195,7 @@ export const reducer = (
           sellAmount: Number(
             formatUnits(
               action.payload.sellAmount,
-              TOKENS[state.sellToken].decimal
+              tokensBySymbol[state.sellToken].decimals
             )
           ).toString(),
           error: undefined,
@@ -190,7 +206,7 @@ export const reducer = (
         fetching: false,
         price: action.payload,
         buyAmount: Number(
-          formatUnits(action.payload.buyAmount, TOKENS[state.buyToken].decimal)
+          formatUnits(action.payload.buyAmount, tokensBySymbol[state.buyToken].decimals)
         ).toString(),
         error: undefined,
       };
