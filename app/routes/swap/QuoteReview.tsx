@@ -12,7 +12,7 @@ import {
 import { shorten } from "./utils";
 import { primaryButton } from "./index";
 import { ExchangeRate } from "~/components";
-import { TOKENS, ZERO_EX_PROXY } from "~/constants";
+import { getTokenListBySymbol, ZERO_EX_PROXY } from "~/constants";
 
 import type { Dispatch } from "react";
 import type { SwapTranslations } from "./index";
@@ -40,7 +40,9 @@ export function QuoteReview({
   const { config } = usePrepareSendTransaction({
     chainId: isHardhat ? 31337 : state.quote?.chainId,
     request: {
-      to: state.quote?.to || ZERO_EX_PROXY,
+      to:
+        state.quote?.to ||
+        ZERO_EX_PROXY[state.quote?.chainId.toString() || "1"],
       from: address,
       data: state.quote?.data,
       chainId: state.quote?.chainId,
@@ -68,9 +70,11 @@ export function QuoteReview({
       },
     });
 
-  if (!state.quote) {
+  if (!state.quote || !state.chainId) {
     return <span>Loading...</span>;
   }
+
+  const tokensBySymbol = getTokenListBySymbol(state.chainId);
 
   return (
     <div className="p-3 mx-auto max-w-screen-sm ">
@@ -91,9 +95,7 @@ export function QuoteReview({
             <img
               alt={state.sellToken}
               className="h-9 w-9 mr-2 rounded-md"
-              src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${
-                TOKENS[state.sellToken].address
-              }/logo.png`}
+              src={tokensBySymbol[state.sellToken].logoURI}
             />
             <span>{formatUnits(state.quote.sellAmount, 18)}</span>
             <div className="ml-2">{state.sellToken.toUpperCase()}</div>
@@ -105,21 +107,22 @@ export function QuoteReview({
             <img
               alt={state.buyToken}
               className="h-9 w-9 mr-2 rounded-md"
-              src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${
-                TOKENS[state.buyToken].address
-              }/logo.png`}
+              src={tokensBySymbol[state.buyToken].logoURI}
             />
             <div>{formatUnits(state.quote.buyAmount, 18)}</div>
             <div className="ml-2">{state.buyToken.toUpperCase()}</div>
           </div>
         </div>
         <div className="flex justify-center my-3">
-          <ExchangeRate
-            sellToken={state.sellToken}
-            buyToken={state.buyToken}
-            sellAmount={state.quote.sellAmount}
-            buyAmount={state.quote.buyAmount}
-          />
+          {state.chainId ? (
+            <ExchangeRate
+              sellToken={state.sellToken}
+              buyToken={state.buyToken}
+              sellAmount={state.quote.sellAmount}
+              buyAmount={state.quote.buyAmount}
+              chainId={state.chainId}
+            />
+          ) : null}
         </div>
         <button
           type="button"

@@ -13,7 +13,11 @@ import {
 import { primaryButton } from "./index";
 import { validateResponseData } from "~/api";
 import { useFetchDebouncePrice } from "~/hooks";
-import { TOKENS, ZERO_EX_PROXY } from "~/constants";
+import {
+  TOKEN_LISTS_BY_NETWORK,
+  TOKEN_LISTS_MAP_BY_NETWORK,
+  ZERO_EX_PROXY,
+} from "~/constants";
 import {
   onFetchQuote,
   onBuyTokenSelect,
@@ -70,11 +74,14 @@ export function PriceReview({
 
   const fetchPrice = useFetchDebouncePrice(onPriceSuccess);
 
+  const tokens = TOKEN_LISTS_BY_NETWORK[state.chainId || 1];
+  const tokensBySymbol = TOKEN_LISTS_MAP_BY_NETWORK[state.chainId || 1];
+
   useContractRead({
-    address: address ? TOKENS[state.sellToken].address : undefined,
+    address: address ? tokensBySymbol[state.sellToken].address : undefined,
     abi: erc20ABI,
     functionName: "allowance",
-    args: [address || "0x", ZERO_EX_PROXY],
+    args: [address || "0x", ZERO_EX_PROXY[state.chainId?.toString() || 1]],
     onSuccess: (data) => {
       if (data["_hex"] === "0x00") {
         dispatch({ type: "set approval required", payload: true });
@@ -111,9 +118,7 @@ export function PriceReview({
         <img
           alt={state.sellToken}
           className="h-9 w-9 mr-2 rounded-md"
-          src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${
-            TOKENS[state.sellToken].address
-          }/logo.png`}
+          src={tokensBySymbol[state.sellToken].logoURI}
         />
         <div className="h-14 sm:w-full sm:mr-2">
           <select
@@ -138,11 +143,13 @@ export function PriceReview({
             }}
           >
             {/* <option value="">--Choose a token--</option> */}
-            <option value="usdc">USDC</option>
-            <option value="dai">DAI</option>
-            <option value="matic">MATIC</option>
-            <option value="weth">WETH</option>
-            <option value="wbtc">WBTC</option>
+            {tokens.map((token: any) => {
+              return (
+                <option key={token.address} value={token.symbol.toLowerCase()}>
+                  {token.symbol}
+                </option>
+              );
+            })}
           </select>
           {address ? (
             <Max
@@ -189,7 +196,6 @@ export function PriceReview({
             if (state.buyAmount || state.sellAmount) {
               onDirectionChange(state, dispatch, signer as Signer);
             }
-            debugger;
             setSearchParams({
               ...Object.fromEntries(searchParams),
               sell: state.buyToken,
@@ -207,9 +213,7 @@ export function PriceReview({
         <img
           alt={state.buyToken}
           className="h-9 w-9 mr-2 rounded-md"
-          src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${
-            TOKENS[state.buyToken].address
-          }/logo.png`}
+          src={tokensBySymbol[state.buyToken].logoURI}
         />
         <select
           name="buy"
@@ -233,11 +237,13 @@ export function PriceReview({
           }}
         >
           {/* <option value="">--Choose a token--</option> */}
-          <option value="usdc">USDC</option>
-          <option value="dai">DAI</option>
-          <option value="matic">MATIC</option>
-          <option value="weth">WETH</option>
-          <option value="wbtc">WBTC</option>
+          {tokens.map((token: any) => {
+            return (
+              <option key={token.address} value={token.symbol.toLowerCase()}>
+                {token.symbol}
+              </option>
+            );
+          })}
         </select>
         <label htmlFor="buy-amount" className="sr-only">
           {translations["Buy Amount"]}
@@ -276,8 +282,9 @@ export function PriceReview({
               {translations["Fetching best price"]}…
             </span>
           </span>
-        ) : state.price ? (
+        ) : state.chainId && state.price ? (
           <ExchangeRate
+            chainId={state.chainId}
             sellToken={state.sellToken}
             buyToken={state.buyToken}
             sellAmount={state.price?.sellAmount}
@@ -303,8 +310,10 @@ function Submit({
   dispatch: Dispatch<ActionTypes>;
   translations: SwapTranslations;
 }) {
+  const tokensBySymbol = TOKEN_LISTS_MAP_BY_NETWORK[state.chainId || 1];
+
   const { data: balance } = useContractRead({
-    address: TOKENS[state.sellToken].address,
+    address: tokensBySymbol[state.sellToken].address,
     functionName: "balanceOf",
     args: [state.account!],
     abi: erc20ABI,
@@ -313,10 +322,10 @@ function Submit({
   const zeroBalance = balance ? balance["_hex"] === "0x00" : undefined;
 
   const { config } = usePrepareContractWrite({
-    address: TOKENS[state.sellToken].address,
+    address: tokensBySymbol[state.sellToken].address,
     abi: erc20ABI,
     functionName: "approve",
-    args: [ZERO_EX_PROXY, MaxInt256],
+    args: [ZERO_EX_PROXY[state.chainId?.toString() || 1], balance || MaxInt256],
   });
 
   const { write, isLoading: isApproving } = useContractWrite({

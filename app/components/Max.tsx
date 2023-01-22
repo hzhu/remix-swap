@@ -1,6 +1,6 @@
 import { formatUnits } from "@ethersproject/units";
 import { erc20ABI, useContractRead } from "wagmi";
-import { TOKENS } from "~/constants";
+import { getTokenListBySymbol } from "~/constants";
 
 import type { Dispatch } from "react";
 import type { DebouncedFetch } from "~/hooks/useFetchDebouncePrice";
@@ -22,15 +22,16 @@ export function Max({
   fetchPrice,
   translations,
 }: MaxArgs) {
+  const tokensBySymbol = getTokenListBySymbol(state.chainId || 1);
   const { data: balance } = useContractRead({
-    address: TOKENS[state.sellToken].address,
+    address: tokensBySymbol[state.sellToken].address,
     functionName: "balanceOf",
     args: [address],
     abi: erc20ABI,
   });
 
   const sellBalance = balance
-    ? formatUnits(balance.toString(), TOKENS[state.sellToken].decimal)
+    ? formatUnits(balance.toString(), tokensBySymbol[state.sellToken].decimals)
     : "";
 
   const sellBalanceText =

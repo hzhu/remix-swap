@@ -33,13 +33,11 @@ export function useSetupWagmi({
 
   useEffect(() => {
     const local = window.location.port ? [chain.hardhat] : [];
-    const testChains = enablePublicTestnets
-      ? [chain.goerli, chain.kovan, chain.rinkeby, chain.ropsten]
-      : [];
+    const testChains = enablePublicTestnets ? [chain.goerli] : [];
     const { chains, provider } = configureChains(
       [
         chain.mainnet,
-        chain.polygon,
+        // chain.polygon, // TODO: Add support for Polygon
         // chain.optimism,
         // chain.arbitrum,
         ...testChains,

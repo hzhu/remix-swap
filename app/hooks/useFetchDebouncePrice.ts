@@ -2,6 +2,7 @@ import qs from "qs";
 import debounce from "lodash.debounce";
 import { useRef, useEffect } from "react";
 import { ENDPOINTS, CHAIN_IDS } from "~/constants";
+import { transformTokenParamsToAddress } from "~/routes/swap/utils";
 
 import type { DebouncedFunc } from "lodash";
 import type {
@@ -26,8 +27,9 @@ export function useFetchDebouncePrice(
 
   useEffect(() => {
     debouncedRef.current = debounce(async (params, network) => {
+      const computedParams = transformTokenParamsToAddress(params, network);
       const endpoint = ENDPOINTS[CHAIN_IDS[network]];
-      const URL = `${endpoint}/swap/v1/price?${qs.stringify(params)}`;
+      const URL = `${endpoint}/swap/v1/price?${qs.stringify(computedParams)}`;
       try {
         const response = await fetch(URL);
         const data: PriceResponse | ZeroExServerError = await response.json();

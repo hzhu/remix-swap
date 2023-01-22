@@ -1,5 +1,7 @@
 import { formatUnits } from "@ethersproject/units";
-import { TOKENS } from "~/constants";
+import { getTokenListBySymbol } from "~/constants";
+import { initialPairByChainId, CHAIN_IDS } from "~/constants";
+import type { Chain } from "wagmi";
 import type {
   PriceResponse,
   QuoteResponse,
@@ -13,6 +15,7 @@ export interface IReducerState {
   price?: PriceResponse;
   finalize: boolean;
   network: string;
+  chainId: number;
   account?: `0x${string}`;
   sellToken: string;
   buyToken: string;
@@ -29,6 +32,9 @@ export type ActionTypes =
   | { type: "reverse trade direction" }
   | { type: "set direction"; payload: TradeDirection }
   | { type: "select network"; payload: string }
+  | { type: "select chain id"; payload: number }
+  | { type: "set sell token"; payload: string }
+  | { type: "set buy token"; payload: string }
   | { type: "choose sell token"; payload: string }
   | { type: "choose buy token"; payload: string }
   | { type: "fetching quote"; payload: boolean }
@@ -46,6 +52,7 @@ const initialState: IReducerState = {
   sellToken: "weth",
   buyToken: "dai",
   network: "ethereum",
+  chainId: 1,
   sellAmount: "",
   buyAmount: "",
   direction: "sell",
@@ -58,18 +65,23 @@ const initialState: IReducerState = {
   quote: undefined,
 };
 
-const supportedTokens = new Set(["usdc", "dai", "matic", "weth", "wbtc"]);
+const DEFAULT_CHAIN_ID = 1;
 
 export const getInitialState = (
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
+  chain?: Chain
 ): IReducerState => {
-  const sell = searchParams.get("sell") || initialState.sellToken;
-  const buy = searchParams.get("buy") || initialState.buyToken;
+  const [sellToken, buyToken] =
+    initialPairByChainId[chain?.id || DEFAULT_CHAIN_ID];
+
+  const sellQuery = searchParams.get("sell");
+  const buyQuery = searchParams.get("buy");
 
   return {
     ...initialState,
-    sellToken: supportedTokens.has(sell) ? sell : initialState.sellToken,
-    buyToken: supportedTokens.has(buy) ? buy : initialState.buyToken,
+    chainId: chain?.id || DEFAULT_CHAIN_ID,
+    sellToken: sellQuery || sellToken,
+    buyToken: buyQuery || buyToken,
   };
 };
 
@@ -77,9 +89,34 @@ export const reducer = (
   state: IReducerState,
   action: ActionTypes
 ): IReducerState => {
+  const tokensBySymbol = getTokenListBySymbol(
+    state.chainId || DEFAULT_CHAIN_ID
+  );
+
+  let sellToken;
+  let buyToken;
+
   switch (action.type) {
+    // move this out... otherwise when we refresh the URL hard resets to this :\
     case "select network":
-      return { ...state, network: action.payload };
+      return {
+        ...state,
+        network: action.payload,
+        chainId: CHAIN_IDS[action.payload],
+      };
+    case "select chain id":
+      [sellToken, buyToken] = initialPairByChainId[action.payload];
+      return { ...state, chainId: action.payload, sellToken, buyToken };
+    case "set sell token":
+      return {
+        ...state,
+        sellToken: action.payload,
+      };
+    case "set buy token":
+      return {
+        ...state,
+        buyToken: action.payload,
+      };
     case "choose sell token":
       if (state.buyToken === action.payload && state.sellToken === "") {
         return {
@@ -152,7 +189,7 @@ export const reducer = (
           sellAmount: Number(
             formatUnits(
               action.payload.sellAmount,
-              TOKENS[state.sellToken].decimal
+              tokensBySymbol[state.sellToken].decimals
             )
           ).toString(),
           error: undefined,
@@ -163,7 +200,10 @@ export const reducer = (
         fetching: false,
         quote: action.payload,
         buyAmount: Number(
-          formatUnits(action.payload.buyAmount, TOKENS[state.buyToken].decimal)
+          formatUnits(
+            action.payload.buyAmount,
+            tokensBySymbol[state.buyToken].decimals
+          )
         ).toString(),
         error: undefined,
       };
@@ -179,7 +219,7 @@ export const reducer = (
           sellAmount: Number(
             formatUnits(
               action.payload.sellAmount,
-              TOKENS[state.sellToken].decimal
+              tokensBySymbol[state.sellToken].decimals
             )
           ).toString(),
           error: undefined,
@@ -190,7 +230,10 @@ export const reducer = (
         fetching: false,
         price: action.payload,
         buyAmount: Number(
-          formatUnits(action.payload.buyAmount, TOKENS[state.buyToken].decimal)
+          formatUnits(
+            action.payload.buyAmount,
+            tokensBySymbol[state.buyToken].decimals
+          )
         ).toString(),
         error: undefined,
       };

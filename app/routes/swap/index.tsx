@@ -1,6 +1,6 @@
 import { json } from "@remix-run/node";
 import { useReducer } from "react";
-import { useAccount, WagmiConfig } from "wagmi";
+import { useAccount, useNetwork, WagmiConfig } from "wagmi";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
 import {
   lightTheme,
@@ -116,8 +116,9 @@ export const loader = async ({ request }: LoaderArgs) => {
 };
 
 function Swap({ lang, translations }: SwapProps) {
+  const { chain } = useNetwork()
   const [searchParams, setSearchParams] = useSearchParams();
-  const [state, dispatch] = useReducer(reducer, getInitialState(searchParams));
+  const [state, dispatch] = useReducer(reducer, getInitialState(searchParams, chain));
 
   useNetworkUrlSync({ dispatch, searchParams, setSearchParams });
 

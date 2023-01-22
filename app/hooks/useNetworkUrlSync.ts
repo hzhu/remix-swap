@@ -1,4 +1,5 @@
 import { allChains, useAccount } from "wagmi";
+import { initialPairByChainId } from "../constants";
 import type { Chain } from "wagmi";
 import type { Dispatch } from "react";
 import type { ActionTypes } from "~/routes/swap/reducer";
@@ -42,20 +43,16 @@ export function useNetworkUrlSync({
 }: UseNetworkUrlSyncArgs) {
   useAccount({
     async onConnect({ connector }) {
+      const chainId = (await connector?.getChainId()) || 1;
       const params = new URLSearchParams(window.location.search);
       const network = params.get("network");
 
       if (network) {
-        const params = new URLSearchParams(window.location.search);
-
-        params.set("network", network);
-        history.replaceState(null, "", `?${params.toString()}`);
-        connector?.connect({ chainId: chainsByName[network].id });
+        const chainId = chainsByName[network].id;
+        connector?.connect({ chainId });
         dispatch({ type: "select network", payload: network });
       } else {
-        const chainId = (await connector?.getChainId()) || 1;
         const network = chainsById[chainId].name.toLowerCase();
-
         dispatch({ type: "select network", payload: network });
         setSearchParams({
           ...searchParams,
@@ -66,10 +63,15 @@ export function useNetworkUrlSync({
       connector?.on("change", async (data) => {
         const chainId = data.chain?.id || 1;
         const network = chainsById[chainId].name.toLowerCase();
+        const [sell, buy] = initialPairByChainId[chainId];
+        dispatch({ type: "set sell token", payload: sell });
+        dispatch({ type: "set buy token", payload: buy });
         dispatch({ type: "select network", payload: network });
         setSearchParams({
           ...searchParams,
           network,
+          sell,
+          buy,
         });
       });
     },
