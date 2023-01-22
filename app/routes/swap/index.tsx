@@ -116,10 +116,10 @@ export const loader = async ({ request }: LoaderArgs) => {
 };
 
 function Swap({ lang, translations }: SwapProps) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [state, dispatch] = useReducer(reducer, getInitialState(searchParams));
 
-  useNetworkUrlSync(dispatch);
+  useNetworkUrlSync({ dispatch, searchParams, setSearchParams });
 
   const { address } = useAccount({
     onConnect: ({ address }) => {

@@ -2,8 +2,23 @@ import { allChains, useAccount } from "wagmi";
 import type { Chain } from "wagmi";
 import type { Dispatch } from "react";
 import type { ActionTypes } from "~/routes/swap/reducer";
+import type { URLSearchParamsInit } from "react-router-dom";
 
 type ChainByKey = { [key: string]: Chain };
+
+interface UseNetworkUrlSyncArgs {
+  dispatch: Dispatch<ActionTypes>;
+  searchParams: URLSearchParams;
+  setSearchParams: (
+    nextInit: URLSearchParamsInit,
+    navigateOptions?:
+      | {
+          replace?: boolean | undefined;
+          state?: any;
+        }
+      | undefined
+  ) => void;
+}
 
 const chainsByName = allChains.reduce<ChainByKey>(
   (acc, curr) =>
@@ -20,7 +35,11 @@ const chainsById = allChains
   );
 
 // TODO: Refactor to support other networks. Currently hardcoded to Ethereum & Polygon.
-export function useNetworkUrlSync(dispatch: Dispatch<ActionTypes>) {
+export function useNetworkUrlSync({
+  dispatch,
+  searchParams,
+  setSearchParams,
+}: UseNetworkUrlSyncArgs) {
   useAccount({
     async onConnect({ connector }) {
       const params = new URLSearchParams(window.location.search);
@@ -36,21 +55,22 @@ export function useNetworkUrlSync(dispatch: Dispatch<ActionTypes>) {
       } else {
         const chainId = (await connector?.getChainId()) || 1;
         const network = chainsById[chainId].name.toLowerCase();
-        const params = new URLSearchParams(window.location.search);
 
-        params.set("network", network);
-        history.replaceState(null, "", `?${params.toString()}`);
         dispatch({ type: "select network", payload: network });
+        setSearchParams({
+          ...searchParams,
+          network,
+        });
       }
 
       connector?.on("change", async (data) => {
         const chainId = data.chain?.id || 1;
         const network = chainsById[chainId].name.toLowerCase();
-        const params = new URLSearchParams(window.location.search);
-
-        params.set("network", network);
-        history.replaceState(null, "", `?${params.toString()}`);
         dispatch({ type: "select network", payload: network });
+        setSearchParams({
+          ...searchParams,
+          network,
+        });
       });
     },
   });

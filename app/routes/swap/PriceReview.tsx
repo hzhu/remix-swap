@@ -189,6 +189,7 @@ export function PriceReview({
             if (state.buyAmount || state.sellAmount) {
               onDirectionChange(state, dispatch, signer as Signer);
             }
+            debugger;
             setSearchParams({
               ...Object.fromEntries(searchParams),
               sell: state.buyToken,
