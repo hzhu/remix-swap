@@ -14,7 +14,7 @@ export const initialPairByChainId: Record<string, string[]> = {
 export const CHAIN_IDS: Record<string, number> = {
   mainnet: 1,
   ethereum: 1,
-  polygon: 142,
+  polygon: 137,
   ropsten: 3,
   goerli: 5,
   hardhat: 31337,
@@ -23,7 +23,7 @@ export const CHAIN_IDS: Record<string, number> = {
 // https://docs.0x.org/0x-api-swap/api-references
 export const ENDPOINTS: Record<number, string> = {
   1: "https://api.0x.org",
-  142: "https://polygon.api.0x.org",
+  137: "https://polygon.api.0x.org",
   3: "https://ropsten.api.0x.org",
   5: "https://goerli.api.0x.org",
   31337: "https://api.0x.org", // hardhat mainnet fork
