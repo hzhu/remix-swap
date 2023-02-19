@@ -118,6 +118,7 @@ export const loader = async ({ request }: LoaderArgs) => {
 function Swap({ lang, translations }: SwapProps) {
   const { chain } = useNetwork()
   const [searchParams, setSearchParams] = useSearchParams();
+  console.log(chain, '<--chainz')
   const [state, dispatch] = useReducer(reducer, getInitialState(searchParams, chain));
 
   useNetworkUrlSync({ dispatch, searchParams, setSearchParams });

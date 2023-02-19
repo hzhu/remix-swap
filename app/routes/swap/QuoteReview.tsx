@@ -37,6 +37,21 @@ export function QuoteReview({
   const params = new URLSearchParams(window.location.search);
   const isHardhat = params.get("network") === "hardhat";
 
+  console.log({
+    chainId: isHardhat ? 31337 : state.quote?.chainId,
+    request: {
+      to:
+        state.quote?.to ||
+        ZERO_EX_PROXY[state.quote?.chainId.toString() || "1"],
+      from: address,
+      data: state.quote?.data,
+      chainId: state.quote?.chainId,
+      gasLimit,
+      gasPrice: state.quote?.gasPrice,
+    },
+  })
+
+
   const { config } = usePrepareSendTransaction({
     chainId: isHardhat ? 31337 : state.quote?.chainId,
     request: {
@@ -51,7 +66,7 @@ export function QuoteReview({
     },
   });
 
-  const { sendTransaction, isLoading: isSendingTransaction } =
+  const { sendTransaction, isLoading: isSendingTransaction, error } =
     useSendTransaction({
       ...config,
       onSettled: (_, error) => {
@@ -69,6 +84,8 @@ export function QuoteReview({
         openAccountModal && openAccountModal();
       },
     });
+  console.log(isSendingTransaction, '<--isSendingTransaction')
+  console.log(error, '<--error')
 
   if (!state.quote || !state.chainId) {
     return <span>Loading...</span>;

@@ -1,14 +1,17 @@
 // https://docs.0x.org/introduction/0x-cheat-sheet#exchange-proxy-addresses
 // https://github.com/0xProject/protocol/blob/development/packages/contract-addresses/addresses.json
-export const ZERO_EX_PROXY : Record<string, `0x${string}`>= {
+export const ZERO_EX_PROXY: Record<string, `0x${string}`> = {
   "1": "0xdef1c0ded9bec7f1a1670819833240f027b25eff",
-  "5": "0xf91bb752490473b8342a3e964e855b9f9a2a668e"
-}
+  "5": "0xf91bb752490473b8342a3e964e855b9f9a2a668e",
+};
+
+type s = "1" | "5" | "137" | "31337";
 
 export const initialPairByChainId: Record<string, string[]> = {
   "1": ["weth", "dai"],
   "5": ["weth", "uni"],
   "137": ["weth", "uni"],
+  "31337": ["weth", "uni"],
 };
 
 export const CHAIN_IDS: Record<string, number> = {
@@ -63,11 +66,12 @@ export const GOERLI_TOKENS: Token[] = [
     symbol: "UNI",
     decimals: 18,
     chainId: 5,
-    logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984/logo.png",
+    logoURI:
+      "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984/logo.png",
   },
 ];
 
-export const MAINNET_TOKENS:Token[] = [
+export const MAINNET_TOKENS: Token[] = [
   {
     name: "Wrapped Ether",
     address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -136,6 +140,14 @@ export const MAINNET_TOKENS:Token[] = [
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png",
   },
+  {
+    name: "Uniswap",
+    address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+    symbol: "UNI",
+    decimals: 18,
+    chainId: 1,
+    logoURI: "ipfs://QmXttGpZrECX5qCyXbBQiqgQNytVGeZW5Anewvh2jc4psg",
+  },
 ];
 
 export const GOERLI_TOKENS_BY_SYMBOL: Record<string, Token> =
@@ -147,26 +159,31 @@ export const GOERLI_TOKENS_BY_SYMBOL: Record<string, Token> =
     };
   }, {});
 
-const MAINNET_TOKENS_BY_SYMBOL: Record<string, Token> =
-  MAINNET_TOKENS.reduce((acc, curr) => {
+const MAINNET_TOKENS_BY_SYMBOL: Record<string, Token> = MAINNET_TOKENS.reduce(
+  (acc, curr) => {
     const { symbol } = curr;
     return {
       ...acc,
       [symbol.toLowerCase()]: curr,
     };
-  }, {});
+  },
+  {}
+);
 
 export const TOKEN_LISTS_BY_NETWORK: Record<string, any> = {
   "5": GOERLI_TOKENS,
   "1": MAINNET_TOKENS,
+  "31337": MAINNET_TOKENS,
 };
 
-type BySymbol = Record<string, Token>
+type BySymbol = Record<string, Token>;
 
-// add supported networks or explodes :(
+// add supported networks or explodes :( lol
 export const TOKEN_LISTS_MAP_BY_NETWORK: Record<string, BySymbol> = {
   "5": GOERLI_TOKENS_BY_SYMBOL,
   "1": MAINNET_TOKENS_BY_SYMBOL,
+  // "137": MATIC_TOKENS_BY_SYMBOL, // implement me
+  "31337": MAINNET_TOKENS_BY_SYMBOL, // We fork mainnet for hardhat so this is okay
 };
 
 // map

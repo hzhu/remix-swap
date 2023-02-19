@@ -71,15 +71,14 @@ export const getInitialState = (
   searchParams: URLSearchParams,
   chain?: Chain
 ): IReducerState => {
-  const [sellToken, buyToken] =
-    initialPairByChainId[chain?.id || DEFAULT_CHAIN_ID];
-
+  const chainId = chain?.id || DEFAULT_CHAIN_ID;
+  const [sellToken, buyToken] = initialPairByChainId[chainId];
   const sellQuery = searchParams.get("sell");
   const buyQuery = searchParams.get("buy");
 
   return {
     ...initialState,
-    chainId: chain?.id || DEFAULT_CHAIN_ID,
+    chainId,
     sellToken: sellQuery || sellToken,
     buyToken: buyQuery || buyToken,
   };

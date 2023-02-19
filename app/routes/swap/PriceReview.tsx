@@ -36,7 +36,7 @@ import {
 } from "~/components";
 
 import type { Dispatch } from "react";
-import type { Signer } from "@wagmi/core";
+import { chain, Signer } from "@wagmi/core";
 import type { SuccessFn } from "~/hooks";
 import type { SwapTranslations } from "./index";
 import type { IReducerState, ActionTypes } from "./reducer";
@@ -76,6 +76,14 @@ export function PriceReview({
 
   const tokens = TOKEN_LISTS_BY_NETWORK[state.chainId || 1];
   const tokensBySymbol = TOKEN_LISTS_MAP_BY_NETWORK[state.chainId || 1];
+
+  if (tokensBySymbol === undefined) {
+    throw new Error(`Chain ID not supported: ${state.chainId}`);
+  }
+
+  if (tokens === undefined) {
+    throw new Error(`No tokens found for chain ID: ${state.chainId}`);
+  }
 
   useContractRead({
     address: address ? tokensBySymbol[state.sellToken].address : undefined,
