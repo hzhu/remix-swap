@@ -5,6 +5,7 @@ import {
   useAddRecentTransaction,
 } from "@rainbow-me/rainbowkit";
 import {
+  useNetwork,
   useAccount,
   useSendTransaction,
   usePrepareSendTransaction,
@@ -12,7 +13,7 @@ import {
 import { shorten } from "./utils";
 import { primaryButton } from "./index";
 import { ExchangeRate } from "~/components";
-import { TOKENS, ZERO_EX_PROXY } from "~/constants";
+import { ZERO_EX_PROXY, TOKEN_LISTS_MAP_BY_NETWORK } from "~/constants";
 
 import type { Dispatch } from "react";
 import type { SwapTranslations } from "./index";
@@ -27,6 +28,7 @@ export function QuoteReview({
   dispatch: Dispatch<ActionTypes>;
   translations: SwapTranslations;
 }) {
+  const { chain } = useNetwork();
   const { address } = useAccount();
   const { openAccountModal } = useAccountModal();
   const addRecentTransaction = useAddRecentTransaction();
@@ -37,10 +39,12 @@ export function QuoteReview({
   const params = new URLSearchParams(window.location.search);
   const isHardhat = params.get("network") === "hardhat";
 
+  const zeroExExchangeProxy = ZERO_EX_PROXY[chain?.id.toString() || 1];
+
   const { config } = usePrepareSendTransaction({
     chainId: isHardhat ? 31337 : state.quote?.chainId,
     request: {
-      to: state.quote?.to || ZERO_EX_PROXY,
+      to: state.quote?.to || zeroExExchangeProxy,
       from: address,
       data: state.quote?.data,
       chainId: state.quote?.chainId,
@@ -68,6 +72,9 @@ export function QuoteReview({
       },
     });
 
+  const tokensBySymbol = TOKEN_LISTS_MAP_BY_NETWORK[chain?.id || 1];
+  const sellTokenAddress = tokensBySymbol[state.sellToken].address;
+
   if (!state.quote) {
     return <span>Loading...</span>;
   }
@@ -91,9 +98,7 @@ export function QuoteReview({
             <img
               alt={state.sellToken}
               className="h-9 w-9 mr-2 rounded-md"
-              src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${
-                TOKENS[state.sellToken].address
-              }/logo.png`}
+              src={tokensBySymbol[state.sellToken].logoURI}
             />
             <span>{formatUnits(state.quote.sellAmount, 18)}</span>
             <div className="ml-2">{state.sellToken.toUpperCase()}</div>
@@ -105,9 +110,7 @@ export function QuoteReview({
             <img
               alt={state.buyToken}
               className="h-9 w-9 mr-2 rounded-md"
-              src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${
-                TOKENS[state.buyToken].address
-              }/logo.png`}
+              src={tokensBySymbol[state.buyToken].logoURI}
             />
             <div>{formatUnits(state.quote.buyAmount, 18)}</div>
             <div className="ml-2">{state.buyToken.toUpperCase()}</div>
@@ -115,6 +118,7 @@ export function QuoteReview({
         </div>
         <div className="flex justify-center my-3">
           <ExchangeRate
+            chainId={chain?.id || 1}
             sellToken={state.sellToken}
             buyToken={state.buyToken}
             sellAmount={state.quote.sellAmount}

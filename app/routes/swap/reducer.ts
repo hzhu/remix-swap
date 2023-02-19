@@ -1,5 +1,6 @@
 import { formatUnits } from "@ethersproject/units";
-import { TOKENS } from "~/constants";
+import { getTokenListBySymbol } from "~/constants";
+import type { BySymbol } from "~/constants";
 import type {
   PriceResponse,
   QuoteResponse,
@@ -77,6 +78,8 @@ export const reducer = (
   state: IReducerState,
   action: ActionTypes
 ): IReducerState => {
+  let tokensBySymbol: BySymbol;
+
   switch (action.type) {
     case "select network":
       return { ...state, network: action.payload };
@@ -144,6 +147,7 @@ export const reducer = (
       if (action.payload === undefined) {
         return { ...state, quote: undefined };
       }
+      tokensBySymbol = getTokenListBySymbol(action.payload.chainId);
       if (state.direction === "buy") {
         return {
           ...state,
@@ -152,7 +156,7 @@ export const reducer = (
           sellAmount: Number(
             formatUnits(
               action.payload.sellAmount,
-              TOKENS[state.sellToken].decimal
+              tokensBySymbol[state.sellToken].decimals
             )
           ).toString(),
           error: undefined,
@@ -163,7 +167,10 @@ export const reducer = (
         fetching: false,
         quote: action.payload,
         buyAmount: Number(
-          formatUnits(action.payload.buyAmount, TOKENS[state.buyToken].decimal)
+          formatUnits(
+            action.payload.buyAmount,
+            tokensBySymbol[state.buyToken].decimals
+          )
         ).toString(),
         error: undefined,
       };
@@ -171,6 +178,7 @@ export const reducer = (
       if (action.payload === undefined) {
         return { ...state, price: undefined };
       }
+      tokensBySymbol = getTokenListBySymbol(action.payload.chainId);
       if (state.direction === "buy") {
         return {
           ...state,
@@ -179,7 +187,7 @@ export const reducer = (
           sellAmount: Number(
             formatUnits(
               action.payload.sellAmount,
-              TOKENS[state.sellToken].decimal
+              tokensBySymbol[state.sellToken].decimals
             )
           ).toString(),
           error: undefined,
@@ -190,7 +198,10 @@ export const reducer = (
         fetching: false,
         price: action.payload,
         buyAmount: Number(
-          formatUnits(action.payload.buyAmount, TOKENS[state.buyToken].decimal)
+          formatUnits(
+            action.payload.buyAmount,
+            tokensBySymbol[state.buyToken].decimals
+          )
         ).toString(),
         error: undefined,
       };

@@ -1,8 +1,9 @@
 import { formatUnits } from "@ethersproject/units";
-import { TOKENS } from "~/constants";
 import type { FC } from "react";
+import { getTokenListBySymbol } from "~/constants";
 
 interface ExchangeRateProps {
+  chainId: number;
   sellAmount: string;
   buyAmount: string;
   sellToken: string;
@@ -10,17 +11,20 @@ interface ExchangeRateProps {
 }
 
 export const ExchangeRate: FC<ExchangeRateProps> = ({
+  chainId,
   sellToken,
   buyToken,
   sellAmount,
   buyAmount,
 }) => {
+  const tokensBySymbol = getTokenListBySymbol(chainId);
+
   const buyAmountInt = parseFloat(
-    formatUnits(buyAmount, TOKENS[buyToken].decimal)
+    formatUnits(buyAmount, tokensBySymbol[buyToken].decimals)
   );
 
   const sellAmountInt = parseFloat(
-    formatUnits(sellAmount, TOKENS[sellToken].decimal)
+    formatUnits(sellAmount, tokensBySymbol[sellToken].decimals)
   );
 
   let buyTokenRate = sellAmountInt / buyAmountInt;

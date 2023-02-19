@@ -6,6 +6,7 @@ import {
   erc20ABI,
   useSigner,
   useAccount,
+  useNetwork,
   useContractRead,
   useContractWrite,
   usePrepareContractWrite,
@@ -13,7 +14,11 @@ import {
 import { primaryButton } from "./index";
 import { validateResponseData } from "~/api";
 import { useFetchDebouncePrice } from "~/hooks";
-import { TOKENS, ZERO_EX_PROXY } from "~/constants";
+import {
+  ZERO_EX_PROXY,
+  TOKEN_LISTS_BY_NETWORK,
+  TOKEN_LISTS_MAP_BY_NETWORK,
+} from "~/constants";
 import {
   onFetchQuote,
   onBuyTokenSelect,
@@ -55,6 +60,7 @@ export function PriceReview({
   const { data: signer } = useSigner();
   const { isConnected } = useAccount();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { chain } = useNetwork();
 
   const onPriceSuccess = useCallback<SuccessFn>(
     (data) => {
@@ -70,11 +76,15 @@ export function PriceReview({
 
   const fetchPrice = useFetchDebouncePrice(onPriceSuccess);
 
+  const zeroExExchangeProxy = ZERO_EX_PROXY[chain?.id.toString() || 1];
+  const tokensBySymbol = TOKEN_LISTS_MAP_BY_NETWORK[chain?.id || 1];
+  const sellTokenAddress = tokensBySymbol[state.sellToken].address;
+
   useContractRead({
-    address: address ? TOKENS[state.sellToken].address : undefined,
+    address: sellTokenAddress,
     abi: erc20ABI,
     functionName: "allowance",
-    args: [address || "0x", ZERO_EX_PROXY],
+    args: [address || "0x", zeroExExchangeProxy],
     onSuccess: (data) => {
       if (data["_hex"] === "0x00") {
         dispatch({ type: "set approval required", payload: true });
@@ -101,6 +111,14 @@ export function PriceReview({
     }
   }
 
+  const chainId = chain?.id;
+
+  const tokens = TOKEN_LISTS_BY_NETWORK[chain?.id || 1];
+
+  if (typeof chainId === "undefined") {
+    return null;
+  }
+
   return (
     <form>
       <div className="mt-4 flex items-start justify-center">
@@ -111,9 +129,7 @@ export function PriceReview({
         <img
           alt={state.sellToken}
           className="h-9 w-9 mr-2 rounded-md"
-          src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${
-            TOKENS[state.sellToken].address
-          }/logo.png`}
+          src={tokensBySymbol[state.sellToken].logoURI}
         />
         <div className="h-14 sm:w-full sm:mr-2">
           <select
@@ -122,7 +138,7 @@ export function PriceReview({
             value={state.sellToken}
             className={clsx(selectStyles, "mr-2", "w-50", "sm:w-full", "h-9")}
             onChange={(e) => {
-              onSellTokenSelect(e, state, dispatch);
+              onSellTokenSelect(e, state, dispatch, chainId);
               if (e.target.value === state.buyToken) {
                 setSearchParams({
                   ...Object.fromEntries(searchParams),
@@ -138,17 +154,20 @@ export function PriceReview({
             }}
           >
             {/* <option value="">--Choose a token--</option> */}
-            <option value="usdc">USDC</option>
-            <option value="dai">DAI</option>
-            <option value="matic">MATIC</option>
-            <option value="weth">WETH</option>
-            <option value="wbtc">WBTC</option>
+            {tokens.map((token) => {
+              return (
+                <option key={token.address} value={token.symbol.toLowerCase()}>
+                  {token.symbol}
+                </option>
+              );
+            })}
           </select>
           {address ? (
             <Max
               state={state}
               dispatch={dispatch}
               address={address}
+              chainId={chainId}
               fetchPrice={fetchPrice}
               translations={translations}
             />
@@ -164,7 +183,7 @@ export function PriceReview({
               value={state.sellAmount || ""}
               className={clsx(selectStyles, "h-9", "pl-2")}
               onChange={(e) =>
-                onSellAmountChange({ e, state, dispatch, fetchPrice })
+                onSellAmountChange({ e, state, dispatch, fetchPrice, chainId })
               }
             />
           ) : (
@@ -173,7 +192,7 @@ export function PriceReview({
               value={state.sellAmount || ""}
               className={clsx(selectStyles, "h-9", "pl-2")}
               onChange={(e) =>
-                onSellAmountChange({ e, state, dispatch, fetchPrice })
+                onSellAmountChange({ e, state, dispatch, fetchPrice, chainId })
               }
             />
           )}
@@ -187,7 +206,7 @@ export function PriceReview({
           onClick={() => {
             dispatch({ type: "reverse trade direction" });
             if (state.buyAmount || state.sellAmount) {
-              onDirectionChange(state, dispatch, signer as Signer);
+              onDirectionChange(state, dispatch, chainId, signer as Signer);
             }
             debugger;
             setSearchParams({
@@ -207,9 +226,7 @@ export function PriceReview({
         <img
           alt={state.buyToken}
           className="h-9 w-9 mr-2 rounded-md"
-          src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${
-            TOKENS[state.buyToken].address
-          }/logo.png`}
+          src={tokensBySymbol[state.buyToken].logoURI}
         />
         <select
           name="buy"
@@ -217,7 +234,7 @@ export function PriceReview({
           value={state.buyToken}
           className={clsx(selectStyles, "mr-2", "w-50", "sm:w-full", "h-9")}
           onChange={(e) => {
-            onBuyTokenSelect(e, state, dispatch);
+            onBuyTokenSelect(e, state, dispatch, chainId);
             if (e.target.value === state.sellToken) {
               setSearchParams({
                 ...Object.fromEntries(searchParams),
@@ -233,11 +250,13 @@ export function PriceReview({
           }}
         >
           {/* <option value="">--Choose a token--</option> */}
-          <option value="usdc">USDC</option>
-          <option value="dai">DAI</option>
-          <option value="matic">MATIC</option>
-          <option value="weth">WETH</option>
-          <option value="wbtc">WBTC</option>
+          {tokens.map((token) => {
+            return (
+              <option key={token.address} value={token.symbol.toLowerCase()}>
+                {token.symbol}
+              </option>
+            );
+          })}
         </select>
         <label htmlFor="buy-amount" className="sr-only">
           {translations["Buy Amount"]}
@@ -258,6 +277,7 @@ export function PriceReview({
               state,
               dispatch,
               fetchPrice,
+              chainId,
             });
           }}
         />
@@ -278,6 +298,7 @@ export function PriceReview({
           </span>
         ) : state.price ? (
           <ExchangeRate
+            chainId={chainId}
             sellToken={state.sellToken}
             buyToken={state.buyToken}
             sellAmount={state.price?.sellAmount}
@@ -286,7 +307,14 @@ export function PriceReview({
         ) : null}
       </div>
       {isConnected && state.account ? (
-        <Submit state={state} dispatch={dispatch} translations={translations} />
+        <Submit
+          state={state}
+          dispatch={dispatch}
+          translations={translations}
+          sellTokenAddress={sellTokenAddress}
+          zeroExExchangeProxy={zeroExExchangeProxy}
+          chainId={chainId}
+        />
       ) : (
         <CustomConnect label={translations["Connect Wallet"]} />
       )}
@@ -298,13 +326,19 @@ function Submit({
   state,
   dispatch,
   translations,
+  sellTokenAddress,
+  zeroExExchangeProxy,
+  chainId,
 }: {
   state: IReducerState;
   dispatch: Dispatch<ActionTypes>;
   translations: SwapTranslations;
+  sellTokenAddress: `0x${string}`;
+  zeroExExchangeProxy: `0x${string}`;
+  chainId: number;
 }) {
   const { data: balance } = useContractRead({
-    address: TOKENS[state.sellToken].address,
+    address: sellTokenAddress,
     functionName: "balanceOf",
     args: [state.account!],
     abi: erc20ABI,
@@ -313,10 +347,10 @@ function Submit({
   const zeroBalance = balance ? balance["_hex"] === "0x00" : undefined;
 
   const { config } = usePrepareContractWrite({
-    address: TOKENS[state.sellToken].address,
+    address: sellTokenAddress,
     abi: erc20ABI,
     functionName: "approve",
-    args: [ZERO_EX_PROXY, MaxInt256],
+    args: [zeroExExchangeProxy, MaxInt256],
   });
 
   const { write, isLoading: isApproving } = useContractWrite({
@@ -350,7 +384,7 @@ function Submit({
     <button
       type="button"
       disabled={state.fetching || state.price === undefined || zeroBalance}
-      onClick={() => onFetchQuote({ state, dispatch })}
+      onClick={() => onFetchQuote({ state, dispatch, chainId })}
       className={clsx(
         primaryButton.element,
         !(state.fetching || state.quote === undefined)
