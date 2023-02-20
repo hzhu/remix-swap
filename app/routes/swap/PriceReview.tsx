@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { useCallback } from "react";
 import { useSearchParams } from "@remix-run/react";
 import { MaxInt256 } from "@ethersproject/constants";
+import { parseUnits } from "@ethersproject/units";
 import {
   erc20ABI,
   useSigner,
@@ -16,6 +17,7 @@ import { validateResponseData } from "~/api";
 import { useFetchDebouncePrice } from "~/hooks";
 import {
   ZERO_EX_PROXY,
+  DEFAULT_CHAIN_ID,
   TOKEN_LISTS_BY_NETWORK,
   TOKEN_LISTS_MAP_BY_NETWORK,
 } from "~/constants";
@@ -78,21 +80,6 @@ export function PriceReview({
 
   const zeroExExchangeProxy = ZERO_EX_PROXY[chain?.id.toString() || 1];
   const tokensBySymbol = TOKEN_LISTS_MAP_BY_NETWORK[chain?.id || 1];
-  const sellTokenAddress = tokensBySymbol[state.sellToken].address;
-
-  useContractRead({
-    address: sellTokenAddress,
-    abi: erc20ABI,
-    functionName: "allowance",
-    args: [address || "0x", zeroExExchangeProxy],
-    onSuccess: (data) => {
-      if (data["_hex"] === "0x00") {
-        dispatch({ type: "set approval required", payload: true });
-      } else {
-        dispatch({ type: "set approval required", payload: false });
-      }
-    },
-  });
 
   let errorMessage = state.error
     ? translations[state.error.msg as ZeroExApiErrorMessages]
@@ -111,13 +98,8 @@ export function PriceReview({
     }
   }
 
-  const chainId = chain?.id;
-
-  const tokens = TOKEN_LISTS_BY_NETWORK[chain?.id || 1];
-
-  if (typeof chainId === "undefined") {
-    return null;
-  }
+  const chainId = chain?.id || DEFAULT_CHAIN_ID;
+  const tokens = TOKEN_LISTS_BY_NETWORK[chainId];
 
   return (
     <form>
@@ -208,7 +190,6 @@ export function PriceReview({
             if (state.buyAmount || state.sellAmount) {
               onDirectionChange(state, dispatch, chainId, signer as Signer);
             }
-            debugger;
             setSearchParams({
               ...Object.fromEntries(searchParams),
               sell: state.buyToken,
@@ -306,14 +287,14 @@ export function PriceReview({
           />
         ) : null}
       </div>
-      {isConnected && state.account ? (
+      {isConnected && state.account && address ? (
         <Submit
           state={state}
-          dispatch={dispatch}
-          translations={translations}
-          sellTokenAddress={sellTokenAddress}
-          zeroExExchangeProxy={zeroExExchangeProxy}
           chainId={chainId}
+          dispatch={dispatch}
+          takerAddress={address}
+          translations={translations}
+          zeroExExchangeProxy={zeroExExchangeProxy}
         />
       ) : (
         <CustomConnect label={translations["Connect Wallet"]} />
@@ -326,17 +307,22 @@ function Submit({
   state,
   dispatch,
   translations,
-  sellTokenAddress,
+  takerAddress,
   zeroExExchangeProxy,
   chainId,
 }: {
   state: IReducerState;
   dispatch: Dispatch<ActionTypes>;
   translations: SwapTranslations;
-  sellTokenAddress: `0x${string}`;
+  takerAddress: `0x${string}`;
   zeroExExchangeProxy: `0x${string}`;
   chainId: number;
 }) {
+  let approvalRequired;
+  const tokensBySymbol = TOKEN_LISTS_MAP_BY_NETWORK[chainId];
+  const { address: sellTokenAddress, decimals } =
+    tokensBySymbol[state.sellToken];
+
   const { data: balance } = useContractRead({
     address: sellTokenAddress,
     functionName: "balanceOf",
@@ -344,27 +330,39 @@ function Submit({
     abi: erc20ABI,
   });
 
+  const { data: allowance, refetch } = useContractRead({
+    abi: erc20ABI,
+    address: sellTokenAddress,
+    functionName: "allowance",
+    args: [takerAddress, zeroExExchangeProxy],
+  });
+
+  if (state.sellAmount) {
+    const sellAmount = parseUnits(state.sellAmount, decimals);
+    approvalRequired = !allowance?.gte(sellAmount);
+    allowance?.gte(sellAmount);
+  }
+
   const zeroBalance = balance ? balance["_hex"] === "0x00" : undefined;
 
   const { config } = usePrepareContractWrite({
     address: sellTokenAddress,
     abi: erc20ABI,
     functionName: "approve",
-    args: [zeroExExchangeProxy, MaxInt256],
+    args: [zeroExExchangeProxy, balance || MaxInt256],
   });
 
-  const { write, isLoading: isApproving } = useContractWrite({
-    ...config,
-    onSuccess() {
-      dispatch({ type: "set approval required", payload: false });
-    },
-  });
+  const { isLoading: isApproving, writeAsync: approveAsync } =
+    useContractWrite(config);
 
-  if (state.approvalRequired) {
+  if (approvalRequired) {
     return (
       <button
         type="button"
-        onClick={() => write && write()}
+        onClick={async () => {
+          approveAsync && (await approveAsync());
+          await refetch();
+        }}
         className={clsx(
           primaryButton.element,
           !(state.fetching || state.quote === undefined)

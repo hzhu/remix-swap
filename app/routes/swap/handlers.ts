@@ -1,12 +1,9 @@
 import qs from "qs";
-import { erc20ABI } from "wagmi";
-import { Contract } from "@ethersproject/contracts";
 import { formatUnits, parseUnits } from "@ethersproject/units";
 import { fetchPrice, fetchQuote, validateResponseData } from "~/api";
 import {
   ENDPOINTS,
   CHAIN_IDS,
-  ZERO_EX_PROXY,
   getTokenListBySymbol,
 } from "~/constants";
 
@@ -142,29 +139,6 @@ export async function onBuyTokenSelect(
   }
 }
 
-async function checkAllowance({
-  state,
-  dispatch,
-  signer,
-  contractAddress,
-}: {
-  state: IReducerState;
-  dispatch: Dispatch<ActionTypes>;
-  signer: Signer;
-  contractAddress?: string;
-}) {
-  if (contractAddress && state.account) {
-    const erc20 = new Contract(contractAddress, erc20ABI, signer);
-    const allowance = await erc20.allowance(state.account, ZERO_EX_PROXY);
-
-    if (allowance["_hex"] === "0x00") {
-      dispatch({ type: "set approval required", payload: true });
-    } else {
-      dispatch({ type: "set approval required", payload: false });
-    }
-  }
-}
-
 export async function onDirectionChange(
   state: IReducerState,
   dispatch: Dispatch<ActionTypes>,
@@ -172,17 +146,8 @@ export async function onDirectionChange(
   signer?: Signer
 ) {
   const tokensBySymbol = getTokenListBySymbol(chainId);
-  const contractAddress = tokensBySymbol[state.buyToken].address;
   const takerAddress = getTakerAddress(state);
   if (state.direction === "sell") {
-    signer &&
-      checkAllowance({
-        state,
-        dispatch,
-        signer,
-        contractAddress,
-      });
-
     const params = {
       sellToken: state.buyToken,
       buyToken: state.sellToken,
@@ -215,14 +180,6 @@ export async function onDirectionChange(
       });
     }
   } else {
-    signer &&
-      checkAllowance({
-        state,
-        dispatch,
-        signer,
-        contractAddress,
-      });
-
     const params = {
       sellToken: state.buyToken,
       buyToken: state.sellToken,
@@ -263,7 +220,7 @@ export function onSellAmountChange({
   state,
   dispatch,
   fetchPrice,
-  chainId
+  chainId,
 }: {
   e: ChangeEvent<HTMLInputElement>;
   state: IReducerState;
@@ -303,7 +260,7 @@ export function onBuyAmountChange({
   state,
   dispatch,
   fetchPrice,
-  chainId
+  chainId,
 }: {
   e: ChangeEvent<HTMLInputElement>;
   state: IReducerState;
@@ -336,7 +293,7 @@ export function onBuyAmountChange({
 export async function onFetchQuote({
   state,
   dispatch,
-  chainId
+  chainId,
 }: {
   state: IReducerState;
   dispatch: Dispatch<ActionTypes>;

@@ -20,7 +20,6 @@ export interface IReducerState {
   sellAmount?: string;
   buyAmount?: string;
   fetching: boolean;
-  approvalRequired: boolean;
   direction: TradeDirection;
   error?: ZeroExClientError;
 }
@@ -36,7 +35,6 @@ export type ActionTypes =
   | { type: "fetching price"; payload: boolean }
   | { type: "set finalize order" }
   | { type: "set account"; payload: `0x${string}` }
-  | { type: "set approval required"; payload: boolean }
   | { type: "set quote"; payload: QuoteResponse | undefined }
   | { type: "set price"; payload: PriceResponse | undefined }
   | { type: "set sell amount"; payload?: string }
@@ -54,12 +52,18 @@ const initialState: IReducerState = {
   account: undefined,
   error: undefined,
   finalize: false,
-  approvalRequired: false,
   price: undefined,
   quote: undefined,
 };
 
-const supportedTokens = new Set(["usdc", "dai", "matic", "weth", "wbtc"]);
+const supportedTokens = new Set([
+  "usdc",
+  "dai",
+  "matic",
+  "weth",
+  "wbtc",
+  "uni",
+]);
 
 export const getInitialState = (
   searchParams: URLSearchParams
@@ -218,11 +222,6 @@ export const reducer = (
         fetching: false,
         buyAmount: action.payload,
         error: undefined,
-      };
-    case "set approval required":
-      return {
-        ...state,
-        approvalRequired: action.payload,
       };
     case "set finalize order":
       return {

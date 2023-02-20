@@ -1,10 +1,12 @@
+export const DEFAULT_CHAIN_ID = 1;
+
 // https://docs.0x.org/introduction/0x-cheat-sheet#exchange-proxy-addresses
 // https://github.com/0xProject/protocol/blob/development/packages/contract-addresses/addresses.json
 export const ZERO_EX_PROXY: Record<string, `0x${string}`> = {
   "1": "0xdef1c0ded9bec7f1a1670819833240f027b25eff",
   "5": "0xf91bb752490473b8342a3e964e855b9f9a2a668e",
   "137": "0xdef1c0ded9bec7f1a1670819833240f027b25eff",
-  "31337": "0xdef1c0ded9bec7f1a1670819833240f027b25eff"
+  "31337": "0xdef1c0ded9bec7f1a1670819833240f027b25eff",
 };
 
 export const initialPairByChainId: Record<string, string[]> = {
@@ -31,7 +33,6 @@ export const ENDPOINTS: Record<number, string> = {
   5: "https://goerli.api.0x.org",
   31337: "https://api.0x.org", // hardhat mainnet fork
 };
-
 
 interface Token {
   name: string;
@@ -141,7 +142,8 @@ export const MAINNET_TOKENS: Token[] = [
     symbol: "UNI",
     decimals: 18,
     chainId: 1,
-    logoURI: "https://bafybeien7mnoult3iphc7pxzufehfrrlntzr6x2f4lplqdub4mrh3bwah4.ipfs.dweb.link/",
+    logoURI:
+      "https://bafybeien7mnoult3iphc7pxzufehfrrlntzr6x2f4lplqdub4mrh3bwah4.ipfs.dweb.link/",
   },
 ];
 
@@ -177,8 +179,8 @@ export type BySymbol = Record<string, Token>;
 export const TOKEN_LISTS_MAP_BY_NETWORK: Record<string, BySymbol> = {
   "5": GOERLI_TOKENS_BY_SYMBOL,
   "1": MAINNET_TOKENS_BY_SYMBOL,
-   // "137": MATIC_TOKENS_BY_SYMBOL, // implement me
-   "31337": MAINNET_TOKENS_BY_SYMBOL, // We fork mainnet for hardhat so this is okay
+  // "137": MATIC_TOKENS_BY_SYMBOL, // implement me
+  "31337": MAINNET_TOKENS_BY_SYMBOL, // We fork mainnet for hardhat so this is okay
 };
 
 // map
