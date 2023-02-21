@@ -37,7 +37,7 @@ export function useSetupWagmi({
     const { chains, provider } = configureChains(
       [
         chain.mainnet,
-        // chain.polygon,
+        chain.polygon,
         // chain.optimism,
         // chain.arbitrum,
         ...testChains,

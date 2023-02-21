@@ -13,7 +13,7 @@ export const initialPairByNetwork = {
   ethereum: ["weth", "dai"],
   matic: ["weth", "dai"],
   goerli: ["weth", "uni"],
-  hardhat: ["weth", "dai"]
+  hardhat: ["weth", "dai"],
 } as const;
 
 export const initialPairByChainId: Record<string, string[]> = {
@@ -26,7 +26,7 @@ export const initialPairByChainId: Record<string, string[]> = {
 export const CHAIN_IDS: Record<string, number> = {
   mainnet: 1,
   ethereum: 1,
-  polygon: 142,
+  polygon: 137,
   ropsten: 3,
   goerli: 5,
   hardhat: 31337,
@@ -35,7 +35,7 @@ export const CHAIN_IDS: Record<string, number> = {
 // https://docs.0x.org/0x-api-swap/api-references
 export const ENDPOINTS: Record<number, string> = {
   1: "https://api.0x.org",
-  142: "https://polygon.api.0x.org",
+  137: "https://polygon.api.0x.org",
   3: "https://ropsten.api.0x.org",
   5: "https://goerli.api.0x.org",
   31337: "https://api.0x.org", // hardhat mainnet fork
@@ -48,9 +48,6 @@ interface Token {
   decimals: number;
   chainId: number;
   logoURI: string;
-  extensions?: {
-    bridgeInfo: object;
-  };
 }
 
 export const GOERLI_TOKENS: Token[] = [
@@ -74,6 +71,58 @@ export const GOERLI_TOKENS: Token[] = [
   },
 ];
 
+export const POLYGON_TOKENS: Token[] = [
+  {
+    chainId: 137,
+    name: "Wrapped Matic",
+    symbol: "WMATIC",
+    decimals: 18,
+    address: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    logoURI:
+      "https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/polygon/assets/0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270/logo.png",
+  },
+  {
+    chainId: 137,
+    name: "Wrapped ETH",
+    symbol: "WETH",
+    decimals: 18,
+    address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+    logoURI: "https://wallet-asset.matic.network/img/tokens/weth.svg",
+  },
+  {
+    chainId: 137,
+    name: "Uniswap",
+    symbol: "UNI",
+    decimals: 18,
+    address: "0xb33eaad8d922b1083446dc23f610c2567fb5180f",
+    logoURI: "https://wallet-asset.matic.network/img/tokens/uni.svg",
+  },
+  {
+    chainId: 137,
+    name: "Wrapped BTC",
+    symbol: "WBTC",
+    decimals: 8,
+    address: "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
+    logoURI: "https://wallet-asset.matic.network/img/tokens/wbtc.svg",
+  },
+  {
+    chainId: 137,
+    name: "USD Coin",
+    symbol: "USDC",
+    decimals: 6,
+    address: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+    logoURI: "https://wallet-asset.matic.network/img/tokens/usdc.svg",
+  },
+  {
+    chainId: 137,
+    name: "Dai - PoS",
+    symbol: "DAI",
+    decimals: 18,
+    address: "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
+    logoURI: "https://wallet-asset.matic.network/img/tokens/dai.svg",
+  },
+];
+
 export const MAINNET_TOKENS: Token[] = [
   {
     name: "Wrapped Ether",
@@ -83,22 +132,6 @@ export const MAINNET_TOKENS: Token[] = [
     chainId: 1,
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png",
-    extensions: {
-      bridgeInfo: {
-        "10": {
-          tokenAddress: "0x4200000000000000000000000000000000000006",
-        },
-        "42161": {
-          tokenAddress: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-        },
-        "137": {
-          tokenAddress: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
-        },
-        "42220": {
-          tokenAddress: "0x2DEf4285787d58a2f811AF24755A8150622f4361",
-        },
-      },
-    },
   },
   {
     name: "Dai Stablecoin",
@@ -117,13 +150,6 @@ export const MAINNET_TOKENS: Token[] = [
     decimals: 18,
     logoURI:
       "https://assets.coingecko.com/coins/images/4713/thumb/matic-token-icon.png?1624446912",
-    extensions: {
-      bridgeInfo: {
-        "137": {
-          tokenAddress: "0x0000000000000000000000000000000000001010",
-        },
-      },
-    },
   },
   {
     name: "USDCoin",
@@ -163,6 +189,17 @@ export const GOERLI_TOKENS_BY_SYMBOL: Record<string, Token> =
     };
   }, {});
 
+const MATIC_TOKENS_BY_SYMBOL: Record<string, Token> = POLYGON_TOKENS.reduce(
+  (acc, curr) => {
+    const { symbol } = curr;
+    return {
+      ...acc,
+      [symbol.toLowerCase()]: curr,
+    };
+  },
+  {}
+);
+
 const MAINNET_TOKENS_BY_SYMBOL: Record<string, Token> = MAINNET_TOKENS.reduce(
   (acc, curr) => {
     const { symbol } = curr;
@@ -177,6 +214,7 @@ const MAINNET_TOKENS_BY_SYMBOL: Record<string, Token> = MAINNET_TOKENS.reduce(
 export const TOKEN_LISTS_BY_NETWORK: Record<string, Token[]> = {
   "5": GOERLI_TOKENS,
   "1": MAINNET_TOKENS,
+  "137": POLYGON_TOKENS,
   "31337": MAINNET_TOKENS,
 };
 
@@ -186,7 +224,7 @@ export type BySymbol = Record<string, Token>;
 export const TOKEN_LISTS_MAP_BY_NETWORK: Record<string, BySymbol> = {
   "5": GOERLI_TOKENS_BY_SYMBOL,
   "1": MAINNET_TOKENS_BY_SYMBOL,
-  // "137": MATIC_TOKENS_BY_SYMBOL, // implement me
+  "137": MATIC_TOKENS_BY_SYMBOL,
   "31337": MAINNET_TOKENS_BY_SYMBOL, // We fork mainnet for hardhat so this is okay
 };
 
