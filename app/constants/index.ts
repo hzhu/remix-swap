@@ -23,6 +23,13 @@ export const initialPairByChainId: Record<string, ("weth" | "dai" | "uni")[]> = 
   "31337": ["weth", "uni"],
 };
 
+export const networkByChainId: Record<string, string> = {
+  "1": "ethereum",
+  "5": "goerli",
+  "137": "matic",
+  "31337": "hardhat",
+}
+
 export const CHAIN_IDS: Record<string, number> = {
   mainnet: 1,
   ethereum: 1,

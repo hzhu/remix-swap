@@ -3,6 +3,7 @@ import {
   initialPairByNetwork,
   getTokenListBySymbol,
   initialPairByChainId,
+  networkByChainId,
 } from "~/constants";
 import type { BySymbol } from "~/constants";
 import type {
@@ -64,6 +65,12 @@ export const getInitialState = (
   searchParams: URLSearchParams,
   chainId: number | undefined
 ): IReducerState => {
+  if (chainId) {
+    const [sellToken, buyToken] = initialPairByChainId[chainId];
+    const network = networkByChainId[chainId]
+    return { ...initialState, network, sellToken, buyToken };
+  }
+  
   const network = searchParams.get("network") || "ethereum";
 
   if (network === "ethereum" || network === "matic" || network === "goerli") {
@@ -71,11 +78,6 @@ export const getInitialState = (
     const [defaultSellToken, defaultBuyToken] = defaultPair;
     const sellToken = searchParams.get("sell") || defaultSellToken;
     const buyToken = searchParams.get("buy") || defaultBuyToken;
-    return { ...initialState, network, sellToken, buyToken };
-  }
-
-  if (chainId) {
-    const [sellToken, buyToken] = initialPairByChainId[chainId];
     return { ...initialState, network, sellToken, buyToken };
   }
 
