@@ -25,15 +25,19 @@ export function Max({
   chainId,
 }: MaxArgs) {
   const tokensBySymbol = getTokenListBySymbol(chainId);
+  const sellToken = tokensBySymbol[state.sellToken];
+  const buyToken = tokensBySymbol[state.buyToken];
+
+  // TODO: Lift this up to the parent component and make sure to refetch new balance when user submits a transaction
   const { data: balance } = useContractRead({
-    address: tokensBySymbol[state.sellToken].address,
+    address: sellToken.address,
     functionName: "balanceOf",
     args: [address],
     abi: erc20ABI,
   });
 
   const sellBalance = balance
-    ? formatUnits(balance.toString(), tokensBySymbol[state.sellToken].decimals)
+    ? formatUnits(balance.toString(), sellToken.decimals)
     : "";
 
   const sellBalanceText =
@@ -51,11 +55,11 @@ export function Max({
       type: "set sell amount",
       payload: sellBalance,
     });
-    const { sellToken, buyToken, network } = state;
+    const { network } = state;
     const sellAmount = balance?.toString();
     const params = {
-      sellToken,
-      buyToken,
+      sellToken: sellToken.address,
+      buyToken: buyToken.address,
       sellAmount,
       takerAddress: address,
     };

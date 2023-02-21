@@ -1,5 +1,9 @@
 import { formatUnits } from "@ethersproject/units";
-import { getTokenListBySymbol } from "~/constants";
+import {
+  initialPairByNetwork,
+  getTokenListBySymbol,
+  initialPairByChainId,
+} from "~/constants";
 import type { BySymbol } from "~/constants";
 import type {
   PriceResponse,
@@ -41,10 +45,10 @@ export type ActionTypes =
   | { type: "set buy amount"; payload?: string }
   | { type: "error"; payload?: ZeroExClientError };
 
-const initialState: IReducerState = {
-  sellToken: "weth",
-  buyToken: "dai",
-  network: "ethereum",
+const initialState = {
+  sellToken: "",
+  buyToken: "",
+  network: "",
   sellAmount: "",
   buyAmount: "",
   direction: "sell",
@@ -54,28 +58,28 @@ const initialState: IReducerState = {
   finalize: false,
   price: undefined,
   quote: undefined,
-};
-
-const supportedTokens = new Set([
-  "usdc",
-  "dai",
-  "matic",
-  "weth",
-  "wbtc",
-  "uni",
-]);
+} as const;
 
 export const getInitialState = (
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
+  chainId: number | undefined
 ): IReducerState => {
-  const sell = searchParams.get("sell") || initialState.sellToken;
-  const buy = searchParams.get("buy") || initialState.buyToken;
+  const network = searchParams.get("network") || "ethereum";
 
-  return {
-    ...initialState,
-    sellToken: supportedTokens.has(sell) ? sell : initialState.sellToken,
-    buyToken: supportedTokens.has(buy) ? buy : initialState.buyToken,
-  };
+  if (network === "ethereum" || network === "matic" || network === "goerli") {
+    const defaultPair = initialPairByNetwork[network];
+    const [defaultSellToken, defaultBuyToken] = defaultPair;
+    const sellToken = searchParams.get("sell") || defaultSellToken;
+    const buyToken = searchParams.get("buy") || defaultBuyToken;
+    return { ...initialState, network, sellToken, buyToken };
+  }
+
+  if (chainId) {
+    const [sellToken, buyToken] = initialPairByChainId[chainId];
+    return { ...initialState, network, sellToken, buyToken };
+  }
+
+  return initialState;
 };
 
 export const reducer = (
@@ -83,7 +87,6 @@ export const reducer = (
   action: ActionTypes
 ): IReducerState => {
   let tokensBySymbol: BySymbol;
-
   switch (action.type) {
     case "select network":
       return { ...state, network: action.payload };

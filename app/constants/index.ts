@@ -9,6 +9,13 @@ export const ZERO_EX_PROXY: Record<string, `0x${string}`> = {
   "31337": "0xdef1c0ded9bec7f1a1670819833240f027b25eff",
 };
 
+export const initialPairByNetwork = {
+  ethereum: ["weth", "dai"],
+  matic: ["weth", "dai"],
+  goerli: ["weth", "uni"],
+  hardhat: ["weth", "dai"]
+} as const;
+
 export const initialPairByChainId: Record<string, string[]> = {
   "1": ["weth", "dai"],
   "5": ["weth", "uni"],

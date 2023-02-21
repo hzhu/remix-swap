@@ -5,8 +5,6 @@ import { MaxInt256 } from "@ethersproject/constants";
 import { parseUnits } from "@ethersproject/units";
 import {
   erc20ABI,
-  useSigner,
-  useAccount,
   useNetwork,
   useContractRead,
   useContractWrite,
@@ -39,7 +37,6 @@ import {
 } from "~/components";
 
 import type { Dispatch } from "react";
-import type { Signer } from "@wagmi/core";
 import type { SuccessFn } from "~/hooks";
 import type { SwapTranslations } from "./index";
 import type { IReducerState, ActionTypes } from "./reducer";
@@ -51,16 +48,14 @@ const selectStyles = `border rounded-md text-xl transition-[background] dark:tra
 export function PriceReview({
   state,
   dispatch,
-  address,
   translations,
+  takerAddress,
 }: {
   state: IReducerState;
   dispatch: Dispatch<ActionTypes>;
   translations: SwapTranslations;
-  address: `0x${string}` | undefined;
+  takerAddress: `0x${string}` | undefined;
 }) {
-  const { data: signer } = useSigner();
-  const { isConnected } = useAccount();
   const [searchParams, setSearchParams] = useSearchParams();
   const { chain } = useNetwork();
 
@@ -144,11 +139,11 @@ export function PriceReview({
               );
             })}
           </select>
-          {address ? (
+          {takerAddress ? (
             <Max
               state={state}
               dispatch={dispatch}
-              address={address}
+              address={takerAddress}
               chainId={chainId}
               fetchPrice={fetchPrice}
               translations={translations}
@@ -159,7 +154,7 @@ export function PriceReview({
           {translations["Sell Amount"]}
         </label>
         <div className="w-full">
-          {address ? (
+          {takerAddress ? (
             <Input
               id="sell-amount"
               value={state.sellAmount || ""}
@@ -188,7 +183,7 @@ export function PriceReview({
           onClick={() => {
             dispatch({ type: "reverse trade direction" });
             if (state.buyAmount || state.sellAmount) {
-              onDirectionChange(state, dispatch, chainId, signer as Signer);
+              onDirectionChange(state, dispatch, chainId);
             }
             setSearchParams({
               ...Object.fromEntries(searchParams),
@@ -287,13 +282,13 @@ export function PriceReview({
           />
         ) : null}
       </div>
-      {isConnected && state.account && address ? (
+      {takerAddress ? (
         <Submit
           state={state}
           chainId={chainId}
           dispatch={dispatch}
-          takerAddress={address}
           translations={translations}
+          takerAddress={takerAddress}
           zeroExExchangeProxy={zeroExExchangeProxy}
         />
       ) : (
@@ -326,7 +321,7 @@ function Submit({
   const { data: balance } = useContractRead({
     address: sellTokenAddress,
     functionName: "balanceOf",
-    args: [state.account!],
+    args: [takerAddress],
     abi: erc20ABI,
   });
 

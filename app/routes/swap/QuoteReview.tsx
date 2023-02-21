@@ -73,10 +73,9 @@ export function QuoteReview({
     });
 
   const tokensBySymbol = TOKEN_LISTS_MAP_BY_NETWORK[chain?.id || 1];
-  const sellTokenAddress = tokensBySymbol[state.sellToken].address;
 
   if (!state.quote) {
-    return <span>Loading...</span>;
+    return <span>Loading…</span>;
   }
 
   return (

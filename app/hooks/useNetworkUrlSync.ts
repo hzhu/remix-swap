@@ -1,4 +1,6 @@
 import { allChains, useAccount } from "wagmi";
+import { DEFAULT_CHAIN_ID, initialPairByChainId } from "~/constants";
+
 import type { Chain } from "wagmi";
 import type { Dispatch } from "react";
 import type { ActionTypes } from "~/routes/swap/reducer";
@@ -64,11 +66,16 @@ export function useNetworkUrlSync({
       }
 
       connector?.on("change", async (data) => {
-        const chainId = data.chain?.id || 1;
+        const chainId = data.chain?.id || DEFAULT_CHAIN_ID;
         const network = chainsById[chainId].name.toLowerCase();
+        const [sellToken, buyToken] = initialPairByChainId[chainId];
+        dispatch({ type: "choose sell token", payload: sellToken });
+        dispatch({ type: "choose buy token", payload: buyToken });
         dispatch({ type: "select network", payload: network });
         setSearchParams({
           ...searchParams,
+          sell: sellToken,
+          buy: buyToken,
           network,
         });
       });

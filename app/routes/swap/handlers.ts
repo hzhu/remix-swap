@@ -1,13 +1,8 @@
 import qs from "qs";
 import { formatUnits, parseUnits } from "@ethersproject/units";
 import { fetchPrice, fetchQuote, validateResponseData } from "~/api";
-import {
-  ENDPOINTS,
-  CHAIN_IDS,
-  getTokenListBySymbol,
-} from "~/constants";
+import { ENDPOINTS, CHAIN_IDS, getTokenListBySymbol } from "~/constants";
 
-import type { Signer } from "@wagmi/core";
 import type { Dispatch, ChangeEvent } from "react";
 import type { ActionTypes } from "./reducer";
 import type { IReducerState } from "./reducer";
@@ -25,15 +20,19 @@ export async function onSellTokenSelect(
   chainId: number
 ) {
   const tokensBySymbol = getTokenListBySymbol(chainId);
+  const sellToken = tokensBySymbol[state.sellToken];
+  const buyToken = tokensBySymbol[state.buyToken];
+  const selectedToken = tokensBySymbol[e.target.value];
+
   dispatch({ type: "choose sell token", payload: e.target.value });
   if (!state.buyAmount || !state.sellAmount) return;
-  if (e.target.value === state.buyToken) {
+  if (e.target.value === buyToken.symbol) {
     const params = {
       sellToken: e.target.value,
-      buyToken: state.sellToken,
+      buyToken: sellToken.address,
       buyAmount: parseUnits(
         state.sellAmount || "",
-        tokensBySymbol[state.sellToken].decimals
+        sellToken.decimals
       ).toString(),
       takerAddress: getTakerAddress(state),
     };
@@ -54,18 +53,18 @@ export async function onSellTokenSelect(
     if (state.direction === "sell") {
       amount.sellAmount = parseUnits(
         state.sellAmount,
-        tokensBySymbol[e.target.value].decimals
+        selectedToken.decimals
       ).toString();
     } else {
       amount.buyAmount = parseUnits(
         state.buyAmount,
-        tokensBySymbol[state.buyToken].decimals
+        buyToken.decimals
       ).toString();
     }
 
     const params = {
-      sellToken: e.target.value,
-      buyToken: state.buyToken,
+      sellToken: selectedToken.address,
+      buyToken: buyToken.address,
       takerAddress: getTakerAddress(state),
       ...amount,
     };
@@ -88,15 +87,18 @@ export async function onBuyTokenSelect(
   chainId: number
 ) {
   const tokensBySymbol = getTokenListBySymbol(chainId);
+  const sellToken = tokensBySymbol[state.sellToken];
+  const buyToken = tokensBySymbol[state.buyToken];
+
   dispatch({ type: "choose buy token", payload: e.target.value });
   if (!state.buyAmount || !state.sellAmount) return;
   if (e.target.value === state.sellToken) {
     const params = {
       buyToken: e.target.value,
-      sellToken: state.buyToken,
+      sellToken: sellToken.address,
       sellAmount: parseUnits(
         state.buyAmount || "",
-        tokensBySymbol[state.buyToken].decimals
+        buyToken.decimals
       ).toString(),
       takerAddress: getTakerAddress(state),
     };
@@ -112,17 +114,17 @@ export async function onBuyTokenSelect(
     if (state.direction === "sell") {
       amount.sellAmount = parseUnits(
         state.sellAmount,
-        tokensBySymbol[state.sellToken].decimals
+        sellToken.decimals
       ).toString();
     } else {
       amount.buyAmount = parseUnits(
         state.buyAmount,
-        tokensBySymbol[state.buyToken].decimals
+        buyToken.decimals
       ).toString();
     }
 
     const params = {
-      sellToken: state.sellToken,
+      sellToken: sellToken.address,
       buyToken: e.target.value,
       takerAddress: getTakerAddress(state),
       ...amount,
@@ -142,18 +144,21 @@ export async function onBuyTokenSelect(
 export async function onDirectionChange(
   state: IReducerState,
   dispatch: Dispatch<ActionTypes>,
-  chainId: number,
-  signer?: Signer
+  chainId: number
 ) {
   const tokensBySymbol = getTokenListBySymbol(chainId);
+
+  const sellToken = tokensBySymbol[state.sellToken];
+  const buyToken = tokensBySymbol[state.buyToken];
+
   const takerAddress = getTakerAddress(state);
   if (state.direction === "sell") {
     const params = {
-      sellToken: state.buyToken,
-      buyToken: state.sellToken,
+      sellToken: buyToken.address,
+      buyToken: sellToken.address,
       buyAmount: parseUnits(
         state.sellAmount || "0",
-        tokensBySymbol[state.sellToken].decimals
+        sellToken.decimals
       ).toString(),
       ...(takerAddress ? { takerAddress } : {}),
     };
@@ -174,18 +179,18 @@ export async function onDirectionChange(
         payload: Number(
           formatUnits(
             (dataOrError as PriceResponse).sellAmount,
-            tokensBySymbol[state.buyToken].decimals
+            buyToken.decimals
           )
         ).toFixed(6),
       });
     }
   } else {
     const params = {
-      sellToken: state.buyToken,
-      buyToken: state.sellToken,
+      sellToken: buyToken.address,
+      buyToken: sellToken.address,
       sellAmount: parseUnits(
         state.buyAmount || "0",
-        tokensBySymbol[state.buyToken].decimals
+        buyToken.decimals
       ).toString(),
       ...(takerAddress ? { takerAddress } : {}),
     };
@@ -205,10 +210,7 @@ export async function onDirectionChange(
       dispatch({
         type: "set buy amount",
         payload: Number(
-          formatUnits(
-            (data as PriceResponse).buyAmount,
-            tokensBySymbol[state.sellToken].decimals
-          )
+          formatUnits((data as PriceResponse).buyAmount, buyToken.decimals)
         ).toFixed(6),
       });
     }
@@ -235,14 +237,15 @@ export function onSellAmountChange({
     const value = parseFloat(e.target.value || "0").toString();
 
     if (value && value !== "0") {
-      const { sellToken, buyToken, network } = state;
+      const { network } = state;
       const tokensBySymbol = getTokenListBySymbol(chainId);
-      const decimal = tokensBySymbol[sellToken].decimals;
-      const sellAmount = parseUnits(value, decimal).toString();
+      const sellToken = tokensBySymbol[state.sellToken];
+      const buyToken = tokensBySymbol[state.buyToken];
+      const sellAmount = parseUnits(value, sellToken.decimals).toString();
       const takerAddress = getTakerAddress(state);
       const params = {
-        sellToken,
-        buyToken,
+        sellToken: sellToken.address,
+        buyToken: buyToken.address,
         sellAmount,
         ...(takerAddress ? { takerAddress } : {}),
       };
@@ -275,12 +278,18 @@ export function onBuyAmountChange({
     const value = parseFloat(e.target.value || "0").toString();
 
     if (value && value !== "0") {
-      const { sellToken, buyToken, network } = state;
+      const { network } = state;
       const tokensBySymbol = getTokenListBySymbol(chainId);
-      const decimal = tokensBySymbol[buyToken].decimals;
-      const buyAmount = parseUnits(value, decimal).toString();
+      const sellToken = tokensBySymbol[state.sellToken];
+      const buyToken = tokensBySymbol[state.buyToken];
+      const buyAmount = parseUnits(value, buyToken.decimals).toString();
       const takerAddress = getTakerAddress(state);
-      const params = { sellToken, buyToken, buyAmount, takerAddress };
+      const params = {
+        buyAmount,
+        takerAddress,
+        buyToken: buyToken.address,
+        sellToken: sellToken.address,
+      };
 
       if (fetchPrice) {
         dispatch({ type: "fetching quote", payload: true });
@@ -299,18 +308,22 @@ export async function onFetchQuote({
   dispatch: Dispatch<ActionTypes>;
   chainId: number;
 }) {
-  const { buyToken, sellToken } = state;
-  const takerAddress = getTakerAddress(state);
   const tokensBySymbol = getTokenListBySymbol(chainId);
+  const sellToken = tokensBySymbol[state.sellToken];
+  const buyToken = tokensBySymbol[state.buyToken];
+  const takerAddress = getTakerAddress(state);
 
   if (fetchQuote) {
     dispatch({ type: "fetching quote", payload: true });
-    let params: QuoteRequest = { buyToken, sellToken };
+    let params: QuoteRequest = {
+      buyToken: buyToken.address,
+      sellToken: sellToken.address,
+    };
 
     if (state.direction === "buy") {
       params = {
-        sellToken,
-        buyToken,
+        sellToken: sellToken.address,
+        buyToken: buyToken.address,
         buyAmount: parseUnits(
           state.buyAmount || "",
           tokensBySymbol[state.buyToken].decimals
@@ -319,11 +332,11 @@ export async function onFetchQuote({
       };
     } else {
       params = {
-        sellToken,
-        buyToken,
+        sellToken: sellToken.address,
+        buyToken: buyToken.address,
         sellAmount: parseUnits(
           state.sellAmount || "",
-          tokensBySymbol[state.sellToken].decimals
+          sellToken.decimals
         ).toString(),
         takerAddress,
       };

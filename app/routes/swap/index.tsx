@@ -1,6 +1,6 @@
 import { json } from "@remix-run/node";
 import { useReducer } from "react";
-import { useAccount, WagmiConfig } from "wagmi";
+import { useAccount, useNetwork, WagmiConfig } from "wagmi";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
 import {
   lightTheme,
@@ -27,6 +27,8 @@ import type {
   PickTranslations,
   ZeroExApiErrorMessages,
 } from "../../translations.server";
+
+import { CHAIN_IDS } from "~/constants";
 
 import spinnerUrl from "~/styles/spinner.css";
 
@@ -116,18 +118,20 @@ export const loader = async ({ request }: LoaderArgs) => {
 };
 
 function Swap({ lang, translations }: SwapProps) {
+  const { chain } = useNetwork();
+  const { address: takerAddress } = useAccount();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [state, dispatch] = useReducer(reducer, getInitialState(searchParams));
+  const [state, dispatch] = useReducer(
+    reducer,
+    getInitialState(searchParams, chain?.id)
+  );
 
   useNetworkUrlSync({ dispatch, searchParams, setSearchParams });
 
-  const { address } = useAccount({
-    onConnect: ({ address }) => {
-      if (address) {
-        dispatch({ type: "set account", payload: address });
-      }
-    },
-  });
+  // Switching from CHAIN_IDS[state.network] to chain.id
+  if (chain && CHAIN_IDS[state.network] !== chain.id) {    
+    return null;
+  }
 
   return (
     <>
@@ -158,7 +162,7 @@ function Swap({ lang, translations }: SwapProps) {
           <PriceReview
             state={state}
             dispatch={dispatch}
-            address={address}
+            takerAddress={takerAddress}
             translations={translations}
           />
         )}
