@@ -14,11 +14,9 @@ import type {
 export function useSetupWagmi({
   appName = "Example",
   alchemyId,
-  enablePublicTestnets,
 }: {
   appName?: string;
   alchemyId?: string;
-  enablePublicTestnets?: boolean;
 }) {
   const [chains, setChains] = useState<Chain[]>([]);
   const [client, setClient] = useState<
@@ -33,16 +31,8 @@ export function useSetupWagmi({
 
   useEffect(() => {
     const local = window.location.port ? [chain.hardhat] : [];
-    const testChains = enablePublicTestnets ? [chain.goerli] : [];
     const { chains, provider } = configureChains(
-      [
-        chain.mainnet,
-        chain.polygon,
-        // chain.optimism,
-        // chain.arbitrum,
-        ...testChains,
-        ...local,
-      ],
+      [chain.mainnet, chain.polygon, chain.goerli, ...local],
       [alchemyProvider({ apiKey: alchemyId }), publicProvider()]
     );
 
@@ -56,7 +46,7 @@ export function useSetupWagmi({
 
     setChains(chains);
     setClient(wagmiClient);
-  }, [appName, alchemyId, enablePublicTestnets]);
+  }, [appName, alchemyId]);
 
   return { client, chains };
 }

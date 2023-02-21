@@ -43,7 +43,7 @@ export function useNetworkStateSync(dispatch: Dispatch<ActionTypes>) {
 }
 
 function validateNetwork(network: string) {
-  const networks = new Set(["ethereum", "polygon", "ropsten"]);
+  const networks = new Set(["ethereum", "polygon", "goerli"]);
 
   return networks.has(network.toLowerCase());
 }

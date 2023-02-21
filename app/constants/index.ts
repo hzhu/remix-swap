@@ -16,7 +16,7 @@ export const initialPairByNetwork = {
   hardhat: ["weth", "dai"],
 } as const;
 
-export const initialPairByChainId: Record<string, string[]> = {
+export const initialPairByChainId: Record<string, ("weth" | "dai" | "uni")[]> = {
   "1": ["weth", "dai"],
   "5": ["weth", "uni"],
   "137": ["weth", "uni"],
@@ -27,7 +27,6 @@ export const CHAIN_IDS: Record<string, number> = {
   mainnet: 1,
   ethereum: 1,
   polygon: 137,
-  ropsten: 3,
   goerli: 5,
   hardhat: 31337,
 };
@@ -35,9 +34,8 @@ export const CHAIN_IDS: Record<string, number> = {
 // https://docs.0x.org/0x-api-swap/api-references
 export const ENDPOINTS: Record<number, string> = {
   1: "https://api.0x.org",
-  137: "https://polygon.api.0x.org",
-  3: "https://ropsten.api.0x.org",
   5: "https://goerli.api.0x.org",
+  137: "https://polygon.api.0x.org",
   31337: "https://api.0x.org", // hardhat mainnet fork
 };
 
@@ -57,8 +55,7 @@ export const GOERLI_TOKENS: Token[] = [
     symbol: "WETH",
     decimals: 18,
     chainId: 5,
-    logoURI:
-      "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png",
+    logoURI: "https://wallet-asset.matic.network/img/tokens/weth.svg",
   },
   {
     name: "Uniswap",
@@ -149,7 +146,7 @@ export const MAINNET_TOKENS: Token[] = [
     symbol: "MATIC",
     decimals: 18,
     logoURI:
-      "https://assets.coingecko.com/coins/images/4713/thumb/matic-token-icon.png?1624446912",
+      "https://wallet-asset.matic.network/img/tokens/matic.svg",
   },
   {
     name: "USDCoin",

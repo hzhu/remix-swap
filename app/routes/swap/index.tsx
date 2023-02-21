@@ -129,7 +129,7 @@ function Swap({ lang, translations }: SwapProps) {
   useNetworkUrlSync({ dispatch, searchParams, setSearchParams });
 
   // Switching from CHAIN_IDS[state.network] to chain.id
-  if (chain && CHAIN_IDS[state.network] !== chain.id) {    
+  if (chain && CHAIN_IDS[state.network] !== chain.id) {
     return null;
   }
 
@@ -149,7 +149,7 @@ function Swap({ lang, translations }: SwapProps) {
             aria-label={translations["sip a coffee and trade"]}
             className="inline-block my-3 text-5xl select-none"
           >
-            ☕
+            Remix Swap
           </span>
         </div>
         {state.finalize ? (
@@ -177,7 +177,6 @@ const WithRainbowKit: FC = () => {
   const { client, chains } = useSetupWagmi({
     appName: "remix-swap",
     alchemyId: ENV.ALCHEMY_API_KEY,
-    enablePublicTestnets: ENV.NODE_ENV === "development",
   });
 
   return client && chains.length ? (
