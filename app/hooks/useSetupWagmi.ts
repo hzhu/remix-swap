@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { chain, configureChains, createClient } from "wagmi";
+import { configureChains, createClient } from "wagmi";
+import { mainnet, goerli, hardhat, polygon } from "@wagmi/chains";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
 import { getDefaultWallets } from "@rainbow-me/rainbowkit";
 import type { Chain } from "wagmi";
-import type { QueryClient } from "@tanstack/react-query";
-import type { Client, WebSocketProvider } from "@wagmi/core";
+import type { Client, ProviderWithFallbackConfig } from "@wagmi/core";
 import type {
   FallbackProvider,
   StaticJsonRpcProvider,
@@ -16,23 +16,23 @@ export function useSetupWagmi({
   alchemyId,
 }: {
   appName?: string;
-  alchemyId?: string;
+  alchemyId: string;
 }) {
   const [chains, setChains] = useState<Chain[]>([]);
-  const [client, setClient] = useState<
-    Client<
-      | (StaticJsonRpcProvider & { chains: Chain[] })
-      | (FallbackProvider & { chains: Chain[] }),
-      WebSocketProvider
-    > & {
-      queryClient: QueryClient;
-    }
-  >();
+  const [client, setClient] =
+    useState<any>();
+
+    // useState<
+    //   Client<
+    //     | FallbackProvider
+    //     | ProviderWithFallbackConfig<StaticJsonRpcProvider & any>
+    //   >
+    // >()
 
   useEffect(() => {
-    const local = window.location.port ? [chain.hardhat] : [];
+    const local = window.location.port ? [hardhat] : [];
     const { chains, provider } = configureChains(
-      [chain.mainnet, chain.polygon, chain.goerli, ...local],
+      [mainnet, polygon, goerli, ...local],
       [alchemyProvider({ apiKey: alchemyId }), publicProvider()]
     );
 

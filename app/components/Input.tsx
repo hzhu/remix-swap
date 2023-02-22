@@ -6,7 +6,7 @@ import type { InputHTMLAttributes } from "react";
 
 interface InputWithAccountProps extends InputHTMLAttributes<HTMLInputElement> {
   address: `0x${string}`;
-  contractAddress?: string;
+  contractAddress?: `0x${string}`;
 }
 
 export const Input = forwardRef<

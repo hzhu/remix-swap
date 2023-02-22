@@ -1,4 +1,4 @@
-import { allChains } from "wagmi";
+import { hardhat  } from '@wagmi/chains'
 import puppeteer from "puppeteer";
 import * as dappeteer from "@chainsafe/dappeteer";
 import { JsonRpcProvider } from "@ethersproject/providers";
@@ -6,7 +6,6 @@ import { getDocument, queries } from "pptr-testing-library";
 import type { Browser, Page } from "puppeteer";
 import type { Dappeteer } from "@chainsafe/dappeteer";
 
-const [hardhat] = allChains.filter((chain) => chain.network === "hardhat");
 const { id: chainId, name: networkName, rpcUrls } = hardhat;
 const TEST_ACCOUNT = "0xcba18C0e0BbcC57C70fdeC4451293a27Bd00f50e";
 const TEST_ACCOUNT_PRIVATE_KEY =
@@ -69,11 +68,15 @@ describe("swap", () => {
       password: "password1234",
     });
 
+    console.log(rpcUrls.default.http.toString(),'<---rpcUrls.default.http.toString()')
+    console.log(rpcUrls.default.http.toString(),'<---rpcUrls.default.http.toString()')
+    console.log(rpcUrls.default.http.toString(),'<---rpcUrls.default.http.toString()')
+
     await metamask.addNetwork({
       chainId,
       networkName,
       symbol: "GO",
-      rpc: rpcUrls.default,
+      rpc: rpcUrls.default.http.toString()
     });
     await metamask.switchNetwork("Ethereum Mainnet");
     await metamask.importPK(TEST_ACCOUNT_PRIVATE_KEY);
@@ -95,6 +98,7 @@ describe("swap", () => {
     const docElement = await getDocument(testPage);
     const sellAmountInput = await getByLabelText(docElement, /Sell Amount/i);
     await sellAmountInput.type("1");
+    await pause(1);
     console.log('Typed in sell amount of 1…');
     await testPage.waitForFunction(() => {
       const [btn] = [...document.getElementsByTagName("button")].filter(
@@ -128,6 +132,7 @@ describe("swap", () => {
       return btn;
     });
     const submitOrder = await getByText(docElement, /Submit Order/i);
+    await pause(0.25);
     console.log('Ready to submit order…');
     await submitOrder.press("Enter");
     console.log('Submitting order…');

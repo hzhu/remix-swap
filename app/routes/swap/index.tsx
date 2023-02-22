@@ -103,6 +103,10 @@ export const loader = async ({ request }: LoaderArgs) => {
     ...zeroExApiErrorMessages,
   ]);
 
+  if (!process.env.ALCHEMY_API_KEY) {
+    throw new Error("Alchemy API key is missing.");
+  }
+
   const data = {
     lang,
     translations,
