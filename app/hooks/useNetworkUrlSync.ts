@@ -1,4 +1,5 @@
-import { allChains, useAccount } from "wagmi";
+import { useAccount } from "wagmi";
+import { mainnet, goerli, hardhat, polygon } from "@wagmi/chains";
 import { DEFAULT_CHAIN_ID, initialPairByChainId } from "~/constants";
 
 import type { Chain } from "wagmi";
@@ -7,6 +8,8 @@ import type { ActionTypes } from "~/routes/swap/reducer";
 import type { URLSearchParamsInit } from "react-router-dom";
 
 type ChainByKey = { [key: string]: Chain };
+
+const allChains = [mainnet, goerli, hardhat, polygon];
 
 interface UseNetworkUrlSyncArgs {
   dispatch: Dispatch<ActionTypes>;
@@ -28,13 +31,10 @@ const chainsByName = allChains.reduce<ChainByKey>(
   {}
 );
 
-const chainsById = allChains
-  // Filter out foundry because this project uses hardhat for testing & both have same chain id
-  .filter((chain) => chain.network !== "foundry")
-  .reduce<ChainByKey>(
-    (acc, curr) => (curr.id ? { ...acc, [curr.id]: curr } : curr),
-    {}
-  );
+const chainsById = allChains.reduce<ChainByKey>(
+  (acc, curr) => (curr.id ? { ...acc, [curr.id]: curr } : curr),
+  {}
+);
 
 // TODO: Refactor to support other networks. Currently hardcoded to Ethereum & Polygon.
 export function useNetworkUrlSync({

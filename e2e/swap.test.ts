@@ -1,4 +1,4 @@
-import { allChains } from "wagmi";
+import { hardhat  } from '@wagmi/chains'
 import puppeteer from "puppeteer";
 import * as dappeteer from "@chainsafe/dappeteer";
 import { JsonRpcProvider } from "@ethersproject/providers";
@@ -6,7 +6,6 @@ import { getDocument, queries } from "pptr-testing-library";
 import type { Browser, Page } from "puppeteer";
 import type { Dappeteer } from "@chainsafe/dappeteer";
 
-const [hardhat] = allChains.filter((chain) => chain.network === "hardhat");
 const { id: chainId, name: networkName, rpcUrls } = hardhat;
 const TEST_ACCOUNT = "0xcba18C0e0BbcC57C70fdeC4451293a27Bd00f50e";
 const TEST_ACCOUNT_PRIVATE_KEY =
@@ -73,7 +72,7 @@ describe("swap", () => {
       chainId,
       networkName,
       symbol: "GO",
-      rpc: rpcUrls.default,
+      rpc: rpcUrls.default.http.toString()
     });
     await metamask.switchNetwork("Ethereum Mainnet");
     await metamask.importPK(TEST_ACCOUNT_PRIVATE_KEY);
@@ -94,6 +93,7 @@ describe("swap", () => {
   it("completes a swap transaction", async () => {
     const docElement = await getDocument(testPage);
     const sellAmountInput = await getByLabelText(docElement, /Sell Amount/i);
+    await pause(0.25);
     await sellAmountInput.type("1");
     console.log('Typed in sell amount of 1…');
     await testPage.waitForFunction(() => {
@@ -131,10 +131,11 @@ describe("swap", () => {
     console.log('Ready to submit order…');
     await submitOrder.press("Enter");
     console.log('Submitting order…');
-    await pause(5);
+    await pause(0.25);
     console.log('Confirming transaction…');
     await metamask.confirmTransaction();
     console.log('Transaction confirmed…');
+    await pause(0.25);
     await testPage.bringToFront();
     await testPage.waitForXPath('//div[contains(text(), "Confirmed")]');
   });
