@@ -2,17 +2,20 @@
  * @type {import('@remix-run/dev').AppConfig}
  */
 module.exports = {
-  ignoredRouteFiles: ['**/.*'],
+  ignoredRouteFiles: ["**/.*"],
   // appDirectory: "app",
   // assetsBuildDirectory: "public/build",
   // serverBuildPath: "build/index.js",
   // publicPath: "/build/",
   serverDependenciesToBundle: [
-    '@rainbow-me/rainbowkit',
-    '@rainbow-me/rainbowkit/wallets',
+    "@rainbow-me/rainbowkit",
+    "@rainbow-me/rainbowkit/wallets",
     /^@?wagmi.*/,
     /.*/,
   ],
+  future: {
+    v2_routeConvention: false,
+  },
 };
 
 // https://github.com/remix-run/remix/discussions/2594#discussioncomment-4733564

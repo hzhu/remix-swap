@@ -53,29 +53,36 @@ export function QuoteReview({
     },
   });
 
-  const { sendTransaction, isLoading: isSendingTransaction } =
-    useSendTransaction({
-      ...config,
-      onSettled: (_, error) => {
-        if (error === null) {
-          dispatch({ type: "set sell amount", payload: "" });
-          dispatch({ type: "set buy amount", payload: "" });
-          dispatch({ type: "set quote", payload: undefined });
-          dispatch({ type: "set buy amount", payload: "" });
-          dispatch({ type: "set finalize order" });
-          openAccountModal && openAccountModal();
-        }
-      },
-      onSuccess: ({ hash }) => {
-        addRecentTransaction({ hash, description: shorten(hash) });
+  const {
+    sendTransaction,
+    isLoading: isSendingTransaction,
+    error,
+  } = useSendTransaction({
+    ...config,
+    onSettled: (_, error) => {
+      if (error === null) {
+        dispatch({ type: "set sell amount", payload: "" });
+        dispatch({ type: "set buy amount", payload: "" });
+        dispatch({ type: "set quote", payload: undefined });
+        dispatch({ type: "set buy amount", payload: "" });
+        dispatch({ type: "set finalize order" });
         openAccountModal && openAccountModal();
-      },
-    });
+      }
+    },
+    onSuccess: ({ hash }) => {
+      addRecentTransaction({ hash, description: shorten(hash) });
+      openAccountModal && openAccountModal();
+    },
+  });
 
   const tokensBySymbol = TOKEN_LISTS_MAP_BY_NETWORK[chain?.id || 1];
 
   if (!state.quote) {
     return <span>Loading…</span>;
+  }
+
+  if (error) {
+    console.error(error.message);
   }
 
   return (

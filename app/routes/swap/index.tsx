@@ -156,7 +156,7 @@ function Swap({ lang, translations }: SwapProps) {
             Remix Swap
           </span>
         </div>
-        {state.finalize ? (
+        {state.finalize && state.quote ? (
           <QuoteReview
             state={state}
             dispatch={dispatch}
