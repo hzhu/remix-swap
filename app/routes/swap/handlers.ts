@@ -28,7 +28,7 @@ export async function onSellTokenSelect(
   if (!state.buyAmount || !state.sellAmount) return;
   if (e.target.value === buyToken.symbol) {
     const params = {
-      sellToken: e.target.value,
+      sellToken: selectedToken.address,
       buyToken: sellToken.address,
       buyAmount: parseUnits(
         state.sellAmount || "",
@@ -88,13 +88,13 @@ export async function onBuyTokenSelect(
 ) {
   const tokensBySymbol = getTokenListBySymbol(chainId);
   const sellToken = tokensBySymbol[state.sellToken];
-  const buyToken = tokensBySymbol[state.buyToken];
+  const buyToken = tokensBySymbol[e.target.value];
 
   dispatch({ type: "choose buy token", payload: e.target.value });
   if (!state.buyAmount || !state.sellAmount) return;
   if (e.target.value === state.sellToken) {
     const params = {
-      buyToken: e.target.value,
+      buyToken: buyToken.address,
       sellToken: sellToken.address,
       sellAmount: parseUnits(
         state.buyAmount || "",
@@ -125,7 +125,7 @@ export async function onBuyTokenSelect(
 
     const params = {
       sellToken: sellToken.address,
-      buyToken: e.target.value,
+      buyToken: buyToken.address,
       takerAddress: getTakerAddress(state),
       ...amount,
     };
