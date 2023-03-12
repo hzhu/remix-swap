@@ -33,7 +33,7 @@ export const LanguageSelect: FC<{ lang: Language; label: string }> = ({
 
           fetcher.submit(
             { lang: e.target.value },
-            { action: "action/set-lang", method: "post" }
+            { action: "set-lang", method: "post" }
           );
         }}
       >

@@ -106,7 +106,12 @@ export function QuoteReview({
               className="h-9 w-9 mr-2 rounded-md"
               src={tokensBySymbol[state.sellToken].logoURI}
             />
-            <span>{formatUnits(state.quote.sellAmount, 18)}</span>
+            <span>
+              {formatUnits(
+                state.quote.sellAmount,
+                tokensBySymbol[state.sellToken].decimals
+              )}
+            </span>
             <div className="ml-2">{state.sellToken.toUpperCase()}</div>
           </div>
         </div>
@@ -118,7 +123,12 @@ export function QuoteReview({
               className="h-9 w-9 mr-2 rounded-md"
               src={tokensBySymbol[state.buyToken].logoURI}
             />
-            <div>{formatUnits(state.quote.buyAmount, 18)}</div>
+            <div>
+              {formatUnits(
+                state.quote.buyAmount,
+                tokensBySymbol[state.buyToken].decimals
+              )}
+            </div>
             <div className="ml-2">{state.buyToken.toUpperCase()}</div>
           </div>
         </div>

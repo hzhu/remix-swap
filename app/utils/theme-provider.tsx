@@ -116,7 +116,7 @@ function ThemeProvider({
 
     persistThemeRef.current.submit(
       { theme },
-      { action: "action/set-theme", method: "post" }
+      { action: "set-theme", method: "post" }
     );
   }, [theme]);
 

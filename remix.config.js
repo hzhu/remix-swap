@@ -14,7 +14,7 @@ module.exports = {
     /.*/,
   ],
   future: {
-    v2_routeConvention: false,
+    v2_routeConvention: true,
   },
 };
 
