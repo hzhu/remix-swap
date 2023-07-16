@@ -1,7 +1,6 @@
 import qs from "qs";
 import debounce from "lodash.debounce";
 import { useRef, useEffect } from "react";
-import { ENDPOINTS, CHAIN_IDS } from "~/constants";
 
 import type { DebouncedFunc } from "lodash";
 import type {
@@ -15,7 +14,7 @@ export type SuccessFn = (data: PriceResponse | ZeroExServerError) => void;
 export type ErrorFn = (error: unknown) => void;
 
 export type DebouncedFetch = DebouncedFunc<
-  (params: PriceRequest, network: string) => Promise<void>
+  (params: PriceRequest, chainId: number) => Promise<void>
 >;
 
 export function useFetchDebouncePrice(
@@ -25,11 +24,12 @@ export function useFetchDebouncePrice(
   const debouncedRef = useRef<DebouncedFetch>();
 
   useEffect(() => {
-    debouncedRef.current = debounce(async (params, network) => {
-      const endpoint = ENDPOINTS[CHAIN_IDS[network]];
-      const URL = `${endpoint}/swap/v1/price?${qs.stringify(params)}`;
+    debouncedRef.current = debounce(async (params, chainId) => {
+      const URL = `/api/price?${qs.stringify(params)}`;
       try {
-        const response = await fetch(URL);
+        const response = await fetch(URL, {
+          headers: { "0x-chain-id": chainId.toString() },
+        });
         const data: PriceResponse | ZeroExServerError = await response.json();
         onSuccess && onSuccess(data);
       } catch (error) {

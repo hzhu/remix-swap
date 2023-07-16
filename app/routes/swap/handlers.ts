@@ -252,7 +252,8 @@ export function onSellAmountChange({
 
       if (fetchPrice) {
         dispatch({ type: "fetching price", payload: true });
-        fetchPrice(params, network);
+        // todo: fix me
+        fetchPrice(params, 1);
       }
     }
   }
@@ -293,7 +294,8 @@ export function onBuyAmountChange({
 
       if (fetchPrice) {
         dispatch({ type: "fetching quote", payload: true });
-        fetchPrice(params, network);
+        // todo: fix me
+        fetchPrice(params, 1);
       }
     }
   }

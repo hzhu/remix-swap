@@ -65,7 +65,8 @@ export function Max({
     };
     dispatch({ type: "fetching quote", payload: true });
     dispatch({ type: "set direction", payload: "sell" });
-    fetchPrice && fetchPrice(params, network);
+    // TODO: fix me
+    fetchPrice && fetchPrice(params, 1);
   };
 
   return sellBalance ? (
