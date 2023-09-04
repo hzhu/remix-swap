@@ -91,7 +91,7 @@ export const POLYGON_TOKENS: Token[] = [
     symbol: "WETH",
     decimals: 18,
     address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
-    logoURI: "https://wallet-asset.matic.network/img/tokens/weth.svg",
+    logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/assets/0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619/logo.png",
   },
   {
     chainId: 137,
@@ -99,7 +99,7 @@ export const POLYGON_TOKENS: Token[] = [
     symbol: "UNI",
     decimals: 18,
     address: "0xb33eaad8d922b1083446dc23f610c2567fb5180f",
-    logoURI: "https://wallet-asset.matic.network/img/tokens/uni.svg",
+    logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/assets/0xb33EaAd8d922B1083446DC23f610c2567fB5180f/logo.png",
   },
   {
     chainId: 137,
@@ -107,7 +107,7 @@ export const POLYGON_TOKENS: Token[] = [
     symbol: "WBTC",
     decimals: 8,
     address: "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
-    logoURI: "https://wallet-asset.matic.network/img/tokens/wbtc.svg",
+    logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png",
   },
   {
     chainId: 137,
@@ -115,7 +115,7 @@ export const POLYGON_TOKENS: Token[] = [
     symbol: "USDC",
     decimals: 6,
     address: "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-    logoURI: "https://wallet-asset.matic.network/img/tokens/usdc.svg",
+    logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/assets/0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174/logo.png",
   },
   {
     chainId: 137,
@@ -123,7 +123,7 @@ export const POLYGON_TOKENS: Token[] = [
     symbol: "DAI",
     decimals: 18,
     address: "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
-    logoURI: "https://wallet-asset.matic.network/img/tokens/dai.svg",
+    logoURI: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/assets/0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063/logo.png",
   },
 ];
 

@@ -115,7 +115,7 @@ export function PriceReview({
             value={state.sellToken}
             className={clsx(selectStyles, "mr-2", "w-50", "sm:w-full", "h-9")}
             onChange={(e) => {
-              onSellTokenSelect(e, state, dispatch, chainId);
+              onSellTokenSelect(e, state, dispatch, chainId, fetchPrice);
               if (e.target.value === state.buyToken) {
                 setSearchParams({
                   ...Object.fromEntries(searchParams),
@@ -183,7 +183,7 @@ export function PriceReview({
           onClick={() => {
             dispatch({ type: "reverse trade direction" });
             if (state.buyAmount || state.sellAmount) {
-              onDirectionChange(state, dispatch, chainId);
+              onDirectionChange(state, dispatch, chainId, fetchPrice);
             }
             setSearchParams({
               ...Object.fromEntries(searchParams),
@@ -210,7 +210,7 @@ export function PriceReview({
           value={state.buyToken}
           className={clsx(selectStyles, "mr-2", "w-50", "sm:w-full", "h-9")}
           onChange={(e) => {
-            onBuyTokenSelect(e, state, dispatch, chainId);
+            onBuyTokenSelect(e, state, dispatch, chainId, fetchPrice);
             if (e.target.value === state.sellToken) {
               setSearchParams({
                 ...Object.fromEntries(searchParams),

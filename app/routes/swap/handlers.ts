@@ -1,13 +1,12 @@
-import qs from "qs";
-import { formatUnits, parseUnits } from "@ethersproject/units";
-import { fetchPrice, fetchQuote, validateResponseData } from "~/api";
+import { parseUnits } from "@ethersproject/units";
+import { fetchQuote, validateResponseData } from "~/api";
 import { ENDPOINTS, CHAIN_IDS, getTokenListBySymbol } from "~/constants";
 
 import type { Dispatch, ChangeEvent } from "react";
 import type { ActionTypes } from "./reducer";
 import type { IReducerState } from "./reducer";
 import type { DebouncedFetch } from "~/hooks/useFetchDebouncePrice";
-import type { QuoteRequest, PriceResponse, QuoteResponse } from "~/api/types";
+import type { QuoteRequest, QuoteResponse } from "~/api/types";
 
 const getTakerAddress = (state: IReducerState) => {
   return state.network === "hardhat" ? undefined : state.account;
@@ -17,7 +16,8 @@ export async function onSellTokenSelect(
   e: ChangeEvent<HTMLSelectElement>,
   state: IReducerState,
   dispatch: Dispatch<ActionTypes>,
-  chainId: number
+  chainId: number,
+  fetchPrice?: DebouncedFetch
 ) {
   const tokensBySymbol = getTokenListBySymbol(chainId);
   const sellToken = tokensBySymbol[state.sellToken];
@@ -41,12 +41,9 @@ export async function onSellTokenSelect(
     dispatch({ type: "set sell amount", payload: "" });
     dispatch({ type: "set direction", payload: "buy" });
 
-    const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<PriceResponse>(data);
-    if ("msg" in dataOrError) {
-      dispatch({ type: "error", payload: dataOrError });
-    } else {
-      dispatch({ type: "set price", payload: dataOrError as PriceResponse });
+    if (fetchPrice) {
+      dispatch({ type: "fetching price", payload: true });
+      fetchPrice(params, CHAIN_IDS[state.network]);
     }
   } else {
     const amount: { buyAmount?: string; sellAmount?: string } = {};
@@ -70,12 +67,9 @@ export async function onSellTokenSelect(
     };
 
     dispatch({ type: "fetching quote", payload: true });
-    const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<PriceResponse>(data);
-    if ("msg" in dataOrError) {
-      dispatch({ type: "error", payload: dataOrError });
-    } else {
-      dispatch({ type: "set price", payload: dataOrError as PriceResponse });
+    if (fetchPrice) {
+      dispatch({ type: "fetching price", payload: true });
+      fetchPrice(params, CHAIN_IDS[state.network]);
     }
   }
 }
@@ -84,7 +78,8 @@ export async function onBuyTokenSelect(
   e: ChangeEvent<HTMLSelectElement>,
   state: IReducerState,
   dispatch: Dispatch<ActionTypes>,
-  chainId: number
+  chainId: number,
+  fetchPrice?: DebouncedFetch
 ) {
   const tokensBySymbol = getTokenListBySymbol(chainId);
   const sellToken = tokensBySymbol[state.sellToken];
@@ -106,9 +101,10 @@ export async function onBuyTokenSelect(
     dispatch({ type: "set sell amount", payload: state.buyAmount });
     dispatch({ type: "set buy amount", payload: "" });
     dispatch({ type: "set direction", payload: "sell" });
-    const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<PriceResponse>(data);
-    dispatch({ type: "set price", payload: dataOrError as PriceResponse });
+    if (fetchPrice) {
+      dispatch({ type: "fetching price", payload: true });
+      fetchPrice(params, CHAIN_IDS[state.network]);
+    }
   } else {
     const amount: { buyAmount?: string; sellAmount?: string } = {};
     if (state.direction === "sell") {
@@ -130,13 +126,9 @@ export async function onBuyTokenSelect(
       ...amount,
     };
 
-    dispatch({ type: "fetching price", payload: true });
-    const data = await fetchPrice(ENDPOINTS[CHAIN_IDS[state.network]], params);
-    const dataOrError = validateResponseData<PriceResponse>(data);
-    if ("msg" in dataOrError) {
-      dispatch({ type: "error", payload: dataOrError });
-    } else {
-      dispatch({ type: "set price", payload: dataOrError as PriceResponse });
+    if (fetchPrice) {
+      dispatch({ type: "fetching price", payload: true });
+      fetchPrice(params, CHAIN_IDS[state.network]);
     }
   }
 }
@@ -144,7 +136,8 @@ export async function onBuyTokenSelect(
 export async function onDirectionChange(
   state: IReducerState,
   dispatch: Dispatch<ActionTypes>,
-  chainId: number
+  chainId: number,
+  fetchPrice?: DebouncedFetch
 ) {
   const tokensBySymbol = getTokenListBySymbol(chainId);
 
@@ -163,26 +156,9 @@ export async function onDirectionChange(
       ...(takerAddress ? { takerAddress } : {}),
     };
 
-    const endpoint = ENDPOINTS[CHAIN_IDS[state.network]];
-    dispatch({ type: "fetching quote", payload: true });
-    const response = await fetch(
-      `${endpoint}/swap/v1/price?${qs.stringify(params)}`
-    );
-    const data = await response.json();
-    const dataOrError = validateResponseData<PriceResponse>(data);
-    if ("msg" in dataOrError) {
-      dispatch({ type: "error", payload: dataOrError });
-    } else {
-      dispatch({ type: "set price", payload: data as PriceResponse });
-      dispatch({
-        type: "set sell amount",
-        payload: Number(
-          formatUnits(
-            (dataOrError as PriceResponse).sellAmount,
-            buyToken.decimals
-          )
-        ).toFixed(6),
-      });
+    if (fetchPrice) {
+      dispatch({ type: "fetching price", payload: true });
+      fetchPrice(params, CHAIN_IDS[state.network]);
     }
   } else {
     const params = {
@@ -195,24 +171,9 @@ export async function onDirectionChange(
       ...(takerAddress ? { takerAddress } : {}),
     };
 
-    const endpoint = ENDPOINTS[CHAIN_IDS[state.network]];
-    dispatch({ type: "fetching price", payload: true });
-    const response = await fetch(
-      `${endpoint}/swap/v1/price?${qs.stringify(params)}`
-    );
-    const data = await response.json();
-    const dataOrError = validateResponseData<PriceResponse>(data);
-
-    if ("msg" in dataOrError) {
-      dispatch({ type: "error", payload: dataOrError });
-    } else {
-      dispatch({ type: "set price", payload: dataOrError as PriceResponse });
-      dispatch({
-        type: "set buy amount",
-        payload: Number(
-          formatUnits((data as PriceResponse).buyAmount, buyToken.decimals)
-        ).toFixed(6),
-      });
+    if (fetchPrice) {
+      dispatch({ type: "fetching price", payload: true });
+      fetchPrice(params, CHAIN_IDS[state.network]);
     }
   }
 }
@@ -252,8 +213,7 @@ export function onSellAmountChange({
 
       if (fetchPrice) {
         dispatch({ type: "fetching price", payload: true });
-        // todo: fix me
-        fetchPrice(params, 1);
+        fetchPrice(params, CHAIN_IDS[network]);
       }
     }
   }
@@ -294,8 +254,7 @@ export function onBuyAmountChange({
 
       if (fetchPrice) {
         dispatch({ type: "fetching quote", payload: true });
-        // todo: fix me
-        fetchPrice(params, 1);
+        fetchPrice(params, CHAIN_IDS[network]);
       }
     }
   }
@@ -343,6 +302,7 @@ export async function onFetchQuote({
         takerAddress,
       };
     }
+    // TODO: use api key
     const data = await fetchQuote(ENDPOINTS[CHAIN_IDS[state.network]], params);
     const dataOrError = validateResponseData(data);
 
